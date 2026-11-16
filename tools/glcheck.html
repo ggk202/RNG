@@ -1,0 +1,8 @@
+<!doctype html><html><body><pre id=o>running</pre><script src="shaders.js"></script><script>
+const c=document.createElement('canvas'),gl=c.getContext('webgl');const out=[];
+if(!gl){document.getElementById('o').textContent='NO WEBGL'}else{
+const VP='precision highp float;precision highp int;uniform mat4 modelMatrix,modelViewMatrix,projectionMatrix,viewMatrix;uniform mat3 normalMatrix;uniform vec3 cameraPosition;attribute vec3 position,normal;attribute vec2 uv;\n';
+const FP='precision highp float;precision highp int;uniform mat4 viewMatrix;uniform vec3 cameraPosition;\n';
+SH.forEach((s,i)=>{for(const [type,code,pre] of [[gl.VERTEX_SHADER,s.v,VP],[gl.FRAGMENT_SHADER,s.f,FP]]){if(!code)continue;const sh=gl.createShader(type);gl.getExtension('OES_standard_derivatives');gl.shaderSource(sh,(/dFdx/.test(code)?'#extension GL_OES_standard_derivatives : enable\n':'')+pre+code);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))out.push('#'+i+(type==gl.VERTEX_SHADER?' VS':' FS')+': '+gl.getShaderInfoLog(sh).slice(0,300)+' :: '+code.slice(0,90).replace(/\n/g,' '))}});
+document.getElementById('o').textContent='DONE '+SH.length+' shaders, errors: '+out.length+'\n'+out.join('\n')}
+</script></body></html>
