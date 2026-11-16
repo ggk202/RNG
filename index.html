@@ -58,7 +58,7 @@ body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toa
 <div id="toast" class="card"></div>
 <div id="info" class="card"><div id="ib"><span id="tb" class="badge"></span><span id="cat"></span></div><h2 id="nm">—</h2><div id="ds"></div><div id="sb">Roll the cosmos</div><div id="md"></div></div>
 <div id="node" class="card"></div><div id="tsum" class="card"></div>
-<div id="cxp" class="pn card"><b>Codex</b> <small id="cxc"></small> <label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label><div id="cxt"></div><input id="cxs" type="search" placeholder="Search discovered objects…" autocomplete="off"><div id="cx" style="margin-top:8px"></div></div>
+<div id="cxp" class="pn card"><b>Codex</b> <small id="cxc"></small> <label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label><div id="dbgtools" style="display:none;clear:both;padding-top:6px"><button id="dbrb">Debug: jump to rebirth</button> <button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button></div><div id="cxt"></div><input id="cxs" type="search" placeholder="Search discovered objects…" autocomplete="off"><div id="cx" style="margin-top:8px"></div></div>
 <div id="svp" class="pn card"><b>Save / Load</b><p style="color:var(--dim)">Copy the string to export. Paste a string and press Import to restore.</p><textarea id="sv" spellcheck="false"></textarea><p><button id="ex">Export</button> <button id="im">Import</button> <button id="rs">Reset</button> <button id="bl">Bloom: on</button> <span id="sm"></span></p></div>
 <div id="rbp" class="pn card"></div><div id="shp" class="pn card"></div>
 <div id="csov"><div class="lb t"></div><div class="lb b"></div><div id="cscap"><div id="cst"></div><div id="css"></div></div><div id="csbtns"><button id="csskipall" style="display:none">Skip all</button> <button id="csskip">Skip ▸</button></div></div>
@@ -1334,7 +1334,7 @@ const o=curI>=0?OBJ[curI]:null;$('csb').style.display=(view=='u'&&!CS.on&&o&&csF
 $('rbbtn').style.display=canRebirth()?'':'none';$('rbbtn').textContent=S.rb+1>MAXRB?'∞ Beyond':'⟲ Rebirth '+ROMAN(S.rb+1);$('shbtn').style.display=(S.rb>0||S.rc>0)?'':'none';$('shbtn').textContent='✦ '+S.rc;
 $('mgbtn').style.display=S.rb>=1&&view=='u'?'':'none';$('mgbtn').textContent='☀ Dyson Builder'+(S.mg[1]?'':' · unlocks finale');$('rbh').textContent=S.rb?('Rebirth '+ROMAN(S.rb)+' · '+LNAME[S.rb]+' · '+(CONSTS[S.cst]||CONSTS.bal).n):'';
 if(curI!==vLast){vLast=curI;const b=S.cx[curI]||0,opts=[];if(b&1)opts.push([-1,'Variant: no modifier']);MODS.forEach((m,k)=>{if(b>>(k+1)&1)opts.push([k,'Variant: '+m.n])});$('vmod').innerHTML=opts.map(([v,n])=>`<option value="${v}">${n}</option>`).join('');$('vmod').value=curM;$('vmod').dataset.n=opts.length}
-$('vmod').style.display=(view=='u'&&!DBG&&+$('vmod').dataset.n>1)?'':'none'}
+$('vmod').style.display=(view=='u'&&!DBG&&+$('vmod').dataset.n>1)?'':'none';$('dbgtools').style.display=DBG?'':'none'}
 /* ---------- codex with persistent collection ---------- */
 function refreshCodex(){if($('cxp').style.display!='block')return;ensureS();const vis=o=>o.layer<=S.rb||DBG,ever=i=>S.own[i]>-2||S.cx[i]>0,all=OBJ.filter(vis),evc=all.filter(o=>ever(o.i)).length;$('cxc').textContent=`${evc} / ${all.length} collected · ${cnt()} this run`;
 const seenMod=m=>OBJ.some(o=>S.cx[o.i]>>(m+1)&1);
@@ -1357,6 +1357,11 @@ const keyId=new Map(NODES.filter(n=>n.key).map(n=>[n.key,n.id])),ups=(Array.isAr
 const mg={},mgc={};if(d.mg&&typeof d.mg=='object')for(const k in d.mg)if(d.mg[k])mg[k]=true;if(d.mgc&&typeof d.mgc=='object')for(const k in d.mgc)mgc[k]=num(d.mgc[k],0);
 S={coins:num(d.c,0),rolls:num(d.r,0),own,cn,cx,cxe,ec,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4}),rb:Math.min(Math.floor(num(d.rb,0)),6),rc:Math.floor(num(d.rc,0)),shop,cst:CONSTS[d.cst]?d.cst:'bal',mg,mgc,life:d.life&&typeof d.life=='object'?{runs:num(d.life.runs,0),rolls:num(d.life.rolls,0)}:{runs:0,rolls:0}};
 recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,Math.max(0,(Date.now()-d.s)/1000));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
+/* ---------- debug shortcuts (they change the real save) ---------- */
+const dbgOK=()=>confirm('Debug actions change your real save. Export it from the Save panel first if you want to keep it. Continue?');
+$('dbrb').onclick=()=>{if(!dbgOK())return;ensureS();const f=LFIN[Math.min(S.rb,MAXRB)];if(S.own[f]<=-2){S.own[f]=-1;S.cx[f]|=1}hideP();openRebirth()};
+$('dbac').onclick=()=>{ensureS();S.rc+=100;toast('+100 aether (debug)')};
+$('dbmg').onclick=()=>{if(!dbgOK())return;ensureS();S.mg[1]=true;toast('Dyson gate passed (debug): the Cosmogenesis Engine can now be rolled')};
 /* ---------- init + loop ---------- */
 S=fresh();recalc();try{const s=localStorage.getItem('csms');if(s&&!imp(s,true)){S=fresh();recalc()}}catch(e){}
 setInterval(()=>{try{localStorage.setItem('csms',sv())}catch(e){}},5000);
