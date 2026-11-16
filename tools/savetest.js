@@ -6,7 +6,7 @@ const before=JSON.stringify({own:S.own,cn:S.cn,up:S.up.slice().sort(),c:S.coins,
 R.roundtrip=imp(s4)&&JSON.stringify({own:S.own,cn:S.cn,up:S.up.slice().sort(),c:S.coins,au:S.auto})===before;
 const d=JSON.parse(decodeURIComponent(escape(atob(s4.slice(6)))));d.own.push(['Future Object','Future Mod']);d.own.push([OBJ[7].n,'Future Mod']);d.cn['Future Object']=3;d.up.push('9:99');d.extra={x:1};d.v=5;
 R.future=imp('CSMS5:'+btoa(unescape(encodeURIComponent(JSON.stringify(d)))))&&S.own[5]===3&&S.own[7]===-1&&S.cn[ci]===7;
-const o410=OLD410.map(i=>i===5?3:-2),legacy='CSMS2:'+btoa(JSON.stringify({c:5,r:1,o:o410.join(','),u:[1,23],a:1,n:OLD410.map(i=>0).join(','),s:0}));R.legacy410=imp(legacy)&&S.own[5]===3&&S.auto===true&&S.up.includes(37);
+const o410=OLD410.map(i=>i===5?3:-2),legacy='CSMS2:'+btoa(JSON.stringify({c:5,r:1,o:o410.join(','),u:[1,23],a:1,n:OLD410.map(i=>0).join(','),s:0}));R.legacy410=imp(legacy)&&S.own[5]===3&&S.auto===true&&S.up.includes(1+BAL.per);
 const o300=OLDN.map(i=>i===5?2:-2);R.legacy300=imp('CSMS2:'+btoa(JSON.stringify({c:5,r:1,o:o300.join(','),u:[],a:1,s:0})))&&S.own[5]===2;
 R.garbage=imp('hello')===false&&imp('CSMS4:%%%')===false;globalThis.RR=R})();`;
 vm.runInContext(js,ctx);console.log(ctx.RR,errs.slice(0,3));
