@@ -409,7 +409,7 @@ if(o.length!=N||o.some(x=>!Number.isInteger(x)||x<-2||x>=MODS.length)||!isFinite
 S={coins:d.c,rolls:+d.r||0,own:o,autoOn:d.a!==0,ab:d.b===1,up:fixUps(d),auto:d.au===1||(!d.v&&d.u.includes(1)),cn:(()=>{let a=String(d.n||'').split(',').map(Number);if(a.length==OLDN.length||a.length==OLD410.length)a=remapOld(a,0);return a.length==N&&a.every(x=>isFinite(x)&&x>=0)?a:new Array(N).fill(0)})()};recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,(Date.now()-d.s)/1000);NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 $('ex').onclick=()=>{$('sv').value=sv();$('sv').select();try{navigator.clipboard.writeText($('sv').value)}catch(e){}$('sm').textContent='Exported (copied if allowed)'};
 $('im').onclick=()=>{if(imp($('sv').value)){$('sm').textContent='Imported!';const b=best();show(b<0?0:b,b<0?-1:S.own[b]);refreshCodex()}else $('sm').textContent='Invalid save string'};
-$('rs').onclick=()=>{if(confirm('Erase all progress?')){S=fresh();recalc();NODES.forEach(n=>n.g=0);sel=-1;try{localStorage.removeItem('csms')}catch(e){}$('sm').textContent='Reset';show(0,-1)}};
+$('rs').onclick=()=>askTwice($('rs'),()=>{S=fresh();recalc();NODES.forEach(n=>n.g=0);sel=-1;try{localStorage.removeItem('csms')}catch(e){}$('sm').textContent='Reset';show(0,-1)});
 /* ---------- v4: modifier FX, debug preview, touch ---------- */
 const OR=[1.6,1.4,2.2,1.8,1.8,1.6,1.9,1.9,1.4,1.6,1.9,1.9,2.8,3.2,2.6,2,2,1.9,2.4];
 let fxG=null,fxU=[],FXP={},warpMode=0,wv=1,wTimer=0;
@@ -1358,10 +1358,11 @@ const mg={},mgc={};if(d.mg&&typeof d.mg=='object')for(const k in d.mg)if(d.mg[k]
 S={coins:num(d.c,0),rolls:num(d.r,0),own,cn,cx,cxe,ec,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4}),rb:Math.min(Math.floor(num(d.rb,0)),6),rc:Math.floor(num(d.rc,0)),shop,cst:CONSTS[d.cst]?d.cst:'bal',mg,mgc,life:d.life&&typeof d.life=='object'?{runs:num(d.life.runs,0),rolls:num(d.life.rolls,0)}:{runs:0,rolls:0}};
 recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,Math.max(0,(Date.now()-d.s)/1000));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 /* ---------- debug shortcuts (they change the real save) ---------- */
-const dbgOK=()=>confirm('Debug actions change your real save. Export it from the Save panel first if you want to keep it. Continue?');
-$('dbrb').onclick=()=>{if(!dbgOK())return;ensureS();const f=LFIN[Math.min(S.rb,MAXRB)];if(S.own[f]<=-2){S.own[f]=-1;S.cx[f]|=1}hideP();openRebirth()};
+function askTwice(b,fn){if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl;fn();return}b.dataset.lbl=b.textContent;b.dataset.armed=1;b.textContent='Tap again to confirm';setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl}},4000)}
+
+$('dbrb').onclick=()=>askTwice($('dbrb'),()=>{ensureS();const f=LFIN[Math.min(S.rb,MAXRB)];if(S.own[f]<=-2){S.own[f]=-1;S.cx[f]|=1}hideP();openRebirth()});
 $('dbac').onclick=()=>{ensureS();S.rc+=100;toast('+100 aether (debug)')};
-$('dbmg').onclick=()=>{if(!dbgOK())return;ensureS();S.mg[1]=true;toast('Dyson gate passed (debug): the Cosmogenesis Engine can now be rolled')};
+$('dbmg').onclick=()=>askTwice($('dbmg'),()=>{ensureS();S.mg[1]=true;toast('Dyson gate passed (debug): the Cosmogenesis Engine can now be rolled')});
 /* ---------- init + loop ---------- */
 S=fresh();recalc();try{const s=localStorage.getItem('csms');if(s&&!imp(s,true)){S=fresh();recalc()}}catch(e){}
 setInterval(()=>{try{localStorage.setItem('csms',sv())}catch(e){}},5000);
