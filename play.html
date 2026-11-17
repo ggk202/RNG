@@ -52,7 +52,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 #cst{font-size:clamp(20px,4.2vw,42px);font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:#fff}#css{color:#b8c4e8;letter-spacing:.12em;margin-top:4px;font-size:clamp(12px,1.6vw,16px)}
 #csbtns{position:absolute;right:14px;top:calc(11vh + 12px);pointer-events:auto}
 body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toast,body.cs .pn{display:none!important}
-#mgov{position:fixed;inset:0;z-index:30;background:rgba(2,3,10,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}#mgc{touch-action:none}#mgh{font-size:15px;text-align:center}#mgb{max-width:560px;text-align:center;color:var(--dim)}#mgb p{margin:6px 0}#rbbtn{background:linear-gradient(135deg,#ff7a3a,#a24bff);border:0;font-weight:700}
+#mgov{position:fixed;inset:0;z-index:30;background:rgba(2,3,10,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}#mgc{touch-action:none}#mgov canvas{position:relative;inset:auto;display:block;flex:0 0 auto}#mgh{font-size:15px;text-align:center}#mgb{max-width:560px;text-align:center;color:var(--dim)}#mgb p{margin:6px 0}#rbbtn{background:linear-gradient(135deg,#ff7a3a,#a24bff);border:0;font-weight:700}
 </style></head><body>
 <div id="hud"><div class="card"><b id="coin">0</b> <small>stardust</small><br><small id="inc"></small><br><small id="rbh" style="color:#ffb070"></small></div><div class="card" style="text-align:right"><small id="st"></small></div></div>
 <div id="toast" class="card"></div>
@@ -2064,10 +2064,11 @@ const M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!(
 OBJ.forEach(o=>{if(o.pu=='rule'&&S.own[o.i]>-2&&!S.rbk[o.n]){S.rbk[o.n]=1;recalc();toast('Rule broken: '+o.n)}});
 ASCI.forEach((i,k)=>{const a=ascTier(i);if(a>before[k]){const first=a>(S.cxa[i]||0);S.cxa[i]=Math.max(S.cxa[i]||0,a);if(first&&(a==3||FINS.has(i)))playRaw('pu',{n:ascName(OBJ[i].n,a),sub:'Plus Ultra · ascended',i,k:0,tier:a});else toast('Ascended: '+ascName(OBJ[i].n,a))}});
 if(rk!==Object.keys(S.rbk).length)hudUI()}}
-{const _r=recalc;recalc=function(){_r();if(S&&hasRule('Rewound Clock'))D.sp*=1.4}}
+{const _r=recalc;recalc=function(){_r();if(!S)return;if(hasRule('Rewound Clock'))D.sp*=1.4;if(S.rb>=2){let n=0;for(let i=LEND[1]+1;i<=LEND[2];i++)if(S.own[i]>-2)n++;D.lk+=.13*n}}}
+{const _d2=doRolls;doRolls=function(n,m){const before=S.rb>=2?S.own.slice(LEND[1]+1,LEND[2]+1).filter(x=>x>-2).length:0;_d2(n,m);if(S.rb>=2&&S.own.slice(LEND[1]+1,LEND[2]+1).filter(x=>x>-2).length!==before)recalc()}}
 /* ---- rebirth ---- */
 {const _rb=doRebirth;doRebirth=function(cst){_rb(cst);S.gens=[];genRowUI()}}
-const LNEW=['','the Reborn modifier, 6 more nodes per skill branch, and the Dyson Builder minigame','decayed megastructures, the Recursive modifier, 6 more nodes per skill branch, and the Last Light minigame'];
+const LNEW=['','the Reborn modifier, 6 more nodes per skill branch, and the Dyson Builder minigame','decayed megastructures, +0.13 luck for every Deep Time discovery, the Recursive modifier, 6 more nodes per skill branch, and the Last Light minigame'];
 /* ---- saves: generators, rule breakers, ascended records ---- */
 {const _se=svEncode;svEncode=function(){const s=_se();try{const d=JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));d.gens=(S.gens||[]).filter(i=>i>=0&&i<N).map(i=>OBJ[i].n);d.rbk=Object.keys(S.rbk||{});const a={};OBJ.forEach(o=>{if(S.cxa&&S.cxa[o.i])a[o.n]=S.cxa[o.i]});d.cxa=a;return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}catch(e){return s}}}
 {const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(!ok)return ok;try{const c=cleanSave(str)||String(str).trim(),d=JSON.parse(decodeURIComponent(escape(atob(c.slice(c.indexOf(':')+1))))),by=new Map(OBJ.map(o=>[o.n,o.i]));ensureS();
@@ -2079,7 +2080,7 @@ function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||O
 let h='';if(own)h+=on?`<button data-a="off" class="on" title="Stop using this item">⚡ Generating${sl>1?' ('+(G.indexOf(curI)+1)+'/'+sl+')':''}</button>`:`<button data-a="on">⚡ Use as generator</button>`;if(manual)h+=`<button data-a="auto">Auto: rarest</button>`;
 const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;r.innerHTML=h}
 {const _iu=infoUI;infoUI=function(i,m){_iu(i,m);if(i>=0)genRowUI()}}
-{const _s=show;show=function(i,m){_s(i,m);if(i<0||!cur)return;const t=Math.max(ascTier(i),S&&S.cxa?S.cxa[i]:0);if(t>0&&!OBJ[i].pu){cur.add(puAura(OR[OBJ[i].c],t));$('nm').textContent+=' '+'+'.repeat(t)}if(OBJ[i].pu)cur.userData.fx=Object.assign({},cur.userData.fx||{},{bloom:1.15,tint:[1.08,1.03,.9],tintA:.3});genRowUI()}}
+{const _s=show;show=function(i,m){_s(i,m);if(i<0||!cur)return;const t=Math.max(ascTier(i),S&&S.cxa?S.cxa[i]:0);if(t>0&&!OBJ[i].pu){cur.add(puAura(OR[OBJ[i].c],t));$('nm').textContent+=' '+'+'.repeat(t)}if(OBJ[i].pu)cur.userData.fx=Object.assign({},cur.userData.fx||{},{bloom:1,tint:[1.08,1.03,.9],tintA:.3},OBJ[i].pu=='beyond'?{ex:-.3}:{});genRowUI()}}
 /* ---- shared Plus Ultra look: gold-white aura, rays, rising sparks ---- */
 function puAura(R,tier){const g=new THREE.Group(),n=tier||3;for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.TorusGeometry(R*(1.25+k*.22),.012+k*.004,8,220),new THREE.MeshBasicMaterial({color:CC('#ffe7a0').multiplyScalar(1.6),...ADD}));m.rotation.set(HP+(k-1)*.35,k*.7,0);g.add(m)}
 const rays=new THREE.Mesh(new THREE.PlaneGeometry(R*7,R*7),sm(`void main(){vec2 q=vP.xy;float a=atan(q.y,q.x),r=length(q);float ray=pow(.5+.5*cos(a*12.+t*.4),18.)+pow(.5+.5*cos(a*7.-t*.25),24.)*.6;gl_FragColor=vec4(vec3(1.,.9,.6)*ray*exp(-r*1.1)*.16*${(.5+n*.25).toFixed(2)},1.);}`,{},ADD));g.add(rays);
