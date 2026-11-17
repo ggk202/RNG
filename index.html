@@ -133,7 +133,8 @@ const R=s=>{let a=s>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|
 const BR=[{n:'Chronal Speed',h:.52,w:['Cadence','Pulse','Flux','Surge','Tempo','Resonance']},{n:'Fortune',h:.12,w:['Serendipity','Fortune','Clover','Providence','Fate','Kismet']},{n:'Stellar Forge',h:.36,w:['Forge','Fusion','Dynamo','Harvest','Reactor','Siphon']},{n:'Anomaly',h:.86,w:['Anomaly','Aberration','Quirk','Mutation','Fracture','Paradox']}];
 /* ---------- v22 skill tree: four currencies, 120-node spiral arms, keystones, legendary spire ---------- */
 const CUR=[{n:'Chronons',s:'⧗',c:'#5ff3ff'},{n:'Aurum',s:'◆',c:'#ffd27a'},{n:'Stardust',s:'✦',c:'#8fe39a'},{n:'Anomalons',s:'✷',c:'#ff8bff'}];
-const TREE={L:120,base:60,perRb:10,c0:2.3,e:.43,lx:.18,mile:10,rs:1};
+const TREE={L:120,base:60,perRb:10,c0:2.3,e:.43,lx:.18,mile:10,rs:1,rsL:[3,.6,1]};
+const ecoS=()=>TREE.rs*TREE.rsL[Math.min(S&&S.rb||0,TREE.rsL.length-1)];/* economy scale per layer: the first universe is generous, later ones lean on aether and rule breakers */
 const NB=[1.085,.8,1.17,.33];
 function brH(n){return n&&n.br>=0?BR[n.br].h:.13}
 const EF=(b,d)=>NB[b];
@@ -2287,7 +2288,7 @@ function modTier(m){return m<0?0:m<10?1:m<18?2:m<24?3:4}
 const PROF_F=[1,2.4,1.8,1.45,1.3],PROF_O=.12;
 function mprof(m){const k=modTier(m);if(!k)return[1,1,1,1];const a=[PROF_O,PROF_O,PROF_O,PROF_O];for(let i=0;i<k;i++)a[(m+i)%4]=PROF_F[k];return a}
 function profTxt(m){const p=mprof(m),y=mmul(m);return'<span style="font-size:12px">'+p.map((v,i)=>`<span style="color:${v>.5?CUR[i].c:'#5a6480'}">${CUR[i].s}&#8202;×${fmt(v*y)}</span>`).join(' &nbsp;')+'</span>'}
-function rates(){const r=[0,0,0,0];if(!S||!D)return r;const G=genList();G.forEach(b=>{const base=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b),p=mprof(S.own[b]);for(let i=0;i<4;i++)r[i]+=base*p[i]});const f=D.cu*(1+cnt()*.02)*TREE.rs;for(let i=0;i<4;i++)r[i]=isFinite(r[i]*f)?r[i]*f:0;return r}
+function rates(){const r=[0,0,0,0];if(!S||!D)return r;const G=genList();G.forEach(b=>{const base=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b),p=mprof(S.own[b]);for(let i=0;i<4;i++)r[i]+=base*p[i]});const f=D.cu*(1+cnt()*.02)*ecoS();for(let i=0;i<4;i++)r[i]=isFinite(r[i]*f)?r[i]*f:0;return r}
 function getW(i){return i==2?S.coins:(S.w&&S.w[i])||0}
 function addW(i,v){if(!isFinite(v))return;if(i==2){S.coins=Math.max(0,S.coins+v);return}if(!Array.isArray(S.w)||S.w.length!=4)S.w=[0,0,0,0];S.w[i]=Math.max(0,(+S.w[i]||0)+v)}
 function gainAll(sec){const r=rates();if(sec>0)for(let i=0;i<4;i++)addW(i,r[i]*sec);return r}
@@ -2336,7 +2337,7 @@ S.w=[w[0]+(dw[0]||0),w[1]+(dw[1]||0),0,w[3]+(dw[2]||0)]}catch(e){if(!Array.isArr
 /* ---------- v23: codex currency rates, legendary impact-frame relics, upgrade navigator ---------- */
 let TGO=null,tlF=-1,_tlSig='';
 /* ---- codex: what every item would produce as a generator, top producer per currency marked ---- */
-function itemRates(i,m){if(m===undefined||m<-1)m=-1;const base=Math.pow(10,.25*K[i])*mmul(m)*ascMul(i),p=mprof(m),f=D.cu*(1+cnt()*.02)*TREE.rs;return p.map(x=>isFinite(x*base*f)?x*base*f:0)}
+function itemRates(i,m){if(m===undefined||m<-1)m=-1;const base=Math.pow(10,.25*K[i])*mmul(m)*ascMul(i),p=mprof(m),f=D.cu*(1+cnt()*.02)*ecoS();return p.map(x=>isFinite(x*base*f)?x*base*f:0)}
 function topGens(){const top=[-1,-1,-1,-1],tv=[-1,-1,-1,-1];OBJ.forEach(o=>{if(S.own[o.i]<=-2||o.pu=='rule')return;itemRates(o.i,S.own[o.i]).forEach((v,c)=>{if(v>tv[c]){tv[c]=v;top[c]=o.i}})});return{top,tv}}
 {const st=document.createElement('style');st.textContent=`.cr{display:flex;flex-wrap:wrap;gap:2px 9px;font-size:11px;margin-top:3px;align-items:center}.cr.pot{opacity:.5}.cr .tp{font-weight:700;border:1px solid currentColor;border-radius:5px;padding:0 4px;box-shadow:0 0 8px currentColor inset}
 .it.topg{border-color:#ffe9a8;box-shadow:0 0 10px rgba(255,233,168,.25)}#cxtop{font-size:12px;margin:0 0 8px;line-height:1.6}#cxtop b{font-weight:600}

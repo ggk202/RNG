@@ -1,7 +1,7 @@
 /* ---------- v23: codex currency rates, legendary impact-frame relics, upgrade navigator ---------- */
 let TGO=null,tlF=-1,_tlSig='';
 /* ---- codex: what every item would produce as a generator, top producer per currency marked ---- */
-function itemRates(i,m){if(m===undefined||m<-1)m=-1;const base=Math.pow(10,.25*K[i])*mmul(m)*ascMul(i),p=mprof(m),f=D.cu*(1+cnt()*.02)*TREE.rs;return p.map(x=>isFinite(x*base*f)?x*base*f:0)}
+function itemRates(i,m){if(m===undefined||m<-1)m=-1;const base=Math.pow(10,.25*K[i])*mmul(m)*ascMul(i),p=mprof(m),f=D.cu*(1+cnt()*.02)*ecoS();return p.map(x=>isFinite(x*base*f)?x*base*f:0)}
 function topGens(){const top=[-1,-1,-1,-1],tv=[-1,-1,-1,-1];OBJ.forEach(o=>{if(S.own[o.i]<=-2||o.pu=='rule')return;itemRates(o.i,S.own[o.i]).forEach((v,c)=>{if(v>tv[c]){tv[c]=v;top[c]=o.i}})});return{top,tv}}
 {const st=document.createElement('style');st.textContent=`.cr{display:flex;flex-wrap:wrap;gap:2px 9px;font-size:11px;margin-top:3px;align-items:center}.cr.pot{opacity:.5}.cr .tp{font-weight:700;border:1px solid currentColor;border-radius:5px;padding:0 4px;box-shadow:0 0 8px currentColor inset}
 .it.topg{border-color:#ffe9a8;box-shadow:0 0 10px rgba(255,233,168,.25)}#cxtop{font-size:12px;margin:0 0 8px;line-height:1.6}#cxtop b{font-weight:600}

@@ -4,7 +4,7 @@ function modTier(m){return m<0?0:m<10?1:m<18?2:m<24?3:4}
 const PROF_F=[1,2.4,1.8,1.45,1.3],PROF_O=.12;
 function mprof(m){const k=modTier(m);if(!k)return[1,1,1,1];const a=[PROF_O,PROF_O,PROF_O,PROF_O];for(let i=0;i<k;i++)a[(m+i)%4]=PROF_F[k];return a}
 function profTxt(m){const p=mprof(m),y=mmul(m);return'<span style="font-size:12px">'+p.map((v,i)=>`<span style="color:${v>.5?CUR[i].c:'#5a6480'}">${CUR[i].s}&#8202;×${fmt(v*y)}</span>`).join(' &nbsp;')+'</span>'}
-function rates(){const r=[0,0,0,0];if(!S||!D)return r;const G=genList();G.forEach(b=>{const base=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b),p=mprof(S.own[b]);for(let i=0;i<4;i++)r[i]+=base*p[i]});const f=D.cu*(1+cnt()*.02)*TREE.rs;for(let i=0;i<4;i++)r[i]=isFinite(r[i]*f)?r[i]*f:0;return r}
+function rates(){const r=[0,0,0,0];if(!S||!D)return r;const G=genList();G.forEach(b=>{const base=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b),p=mprof(S.own[b]);for(let i=0;i<4;i++)r[i]+=base*p[i]});const f=D.cu*(1+cnt()*.02)*ecoS();for(let i=0;i<4;i++)r[i]=isFinite(r[i]*f)?r[i]*f:0;return r}
 function getW(i){return i==2?S.coins:(S.w&&S.w[i])||0}
 function addW(i,v){if(!isFinite(v))return;if(i==2){S.coins=Math.max(0,S.coins+v);return}if(!Array.isArray(S.w)||S.w.length!=4)S.w=[0,0,0,0];S.w[i]=Math.max(0,(+S.w[i]||0)+v)}
 function gainAll(sec){const r=rates();if(sec>0)for(let i=0;i<4;i++)addW(i,r[i]*sec);return r}
