@@ -30,3 +30,13 @@ html = s.split('<script>')[0]
 assert 'Debug:' not in html, 'build_play: debug label still in markup'
 open(os.path.join(root, 'play.html'), 'w', encoding='utf-8').write(s)
 print('play.html written', len(s), 'bytes')
+
+# Stand-alone edition: play.html with three.js r128 (MIT) embedded, so it runs offline from a single file
+three = open(os.path.join(root, 'vendor', 'three-r128.min.js'), encoding='utf-8').read()
+tag = '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>'
+assert s.count(tag) == 1 and '</script' not in three
+sa = s.replace(tag, '<script>' + three + '</script>')
+meta = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Cosmic Roll"><meta name="theme-color" content="#02030a">'
+sa = sa.replace('<title>Cosmic Roll</title>', '<title>Cosmic Roll</title>' + meta, 1)
+open(os.path.join(root, 'cosmic-roll-standalone.html'), 'w', encoding='utf-8').write(sa)
+print('cosmic-roll-standalone.html written', len(sa), 'bytes')
