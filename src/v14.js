@@ -17,7 +17,7 @@ float dt=clamp(.04*r,.015,1.1);vec3 np=pos+v*dt,ac=-1.5*h2*pos/(r2*r2*r),nv=norm
 float cth=pos.y/r,st2=1.-cth*cth,ph=atan(pos.z,pos.x);
 if(erg>0.){float re=1.+.62*st2;if(r<re){float a2=ph-t*2.2/(r*r);float sw=fbm(vec3(cos(a2)*r*2.2,sin(a2)*r*2.2,pos.y*3.+t*.3));acc+=tr*mix(vec3(.25,.1,.75),vec3(.9,.4,1.),sw)*erg*sw*sw*dt*3.*smoothstep(re,re-.2,r);}}
 if(A>0.&&r<R){float x=clamp((r-1.)/(R-1.),0.,1.);float psi=sin(4.*ph-t*3.2+x*2.)*st2*st2*sin(3.1416*x);float e=psi*psi*A;acc+=tr*mix(vec3(1.,.35,.08),vec3(1.,.95,.85),clamp(A*.35,0.,1.))*e*dt*2.;}
-if(hk>0.){float pr=exp(-pow((r-1.5)*5.,2.));acc+=tr*hc*hk*pr*dt*(1.+.5*n(vec3(ph*4.,pos.y*6.,t*3.)));}
+if(hk>0.&&dot(pos,v)>0.){float pr=exp(-pow((r-1.5)*5.,2.));acc+=tr*hc*hk*pr*dt*(1.+.5*n(vec3(ph*4.,pos.y*6.,t*3.)));}
 if(mir>0.&&(r-R)*(nr-R)<0.){vec3 hp=mix(pos,np,(r-R)/(r-nr)),nn=normalize(hp);float hph=atan(hp.z,hp.x),th=acos(clamp(hp.y/R,-1.,1.));
 vec2 uv=vec2(hph*7./3.1416,th*7./3.1416);vec2 gd=abs(fract(uv+vec2(step(1.,mod(floor(uv.y),2.))*.5,0.))-.5);float seam=smoothstep(.44,.5,max(gd.x,gd.y));
 float ck=smoothstep(.035,0.,abs(fbm(hp*2.1)-.5))*sh;float fr=mir*(.42+.5*pow(1.-abs(dot(nn,v)),3.));vec3 rv=reflect(v,nn);

@@ -4,7 +4,7 @@
 function hasRule(n){return!!(S&&S.rbk&&S.rbk[n])}
 var PUI=OBJ.filter(o=>o.pu).sort((a,b)=>b.k-a.k);
 /* ---- ascended tiers: + / ++ / +++ from duplicates on finales and notable items ---- */
-var ASCN=new Set(['Higgs Boson','Antihydrogen','DNA Helix','Diamond','Time Crystal','Living World','Yellow Dwarf','Blue Whale','Neutron Star','Magnetar','Crab Nebula','Pillars of Creation','Grand Design Spiral','Quasar','Supermassive Black Hole','Einstein-Rosen Bridge','White Hole','Boltzmann Brain','Calabi-Yau Manifold','Tesseract','Hopf Fibration','Dyson Shell','Matrioshka Brain','Ringworld','Black Hole Bomb','Iron Star','The Last Black Hole','Positronium Atom','Black Dwarf','Poincaré Recurrence','Totality','Cosmogenesis Engine','The Final Fluctuation'].filter(n=>OBJ.some(o=>o.n==n)));
+var ASCN=new Set(['Higgs Boson','Antihydrogen','DNA Helix','Diamond','Time Crystal','Living World','Yellow Dwarf','Blue Whale','Neutron Star','Magnetar','Crab Nebula','Pillars of Creation','Grand Design Spiral','Quasar','Supermassive Black Hole','Einstein-Rosen Bridge','White Hole','Boltzmann Brain','Calabi-Yau Manifold','Tesseract','Hopf Fibration','Dyson Shell','Matrioshka Brain','Ringworld','Black Hole Bomb','Iron Star','The Last Black Hole','Positronium Atom','Crystalline Black Dwarf','Poincaré Recurrence','Totality','Cosmogenesis Engine','The Final Fluctuation'].filter(n=>OBJ.some(o=>o.n==n)));
 var ASCI=OBJ.filter(o=>ASCN.has(o.n)).map(o=>o.i),FINS=new Set(LFIN);
 function ascTier(i){if(!ASCN||!S||!ASCN.has(OBJ[i].n)||S.own[i]<=-2)return 0;const d=(S.cn[i]||0)-1,th=FINS.has(i)?[1,3,8]:[3,12,40];return d>=th[2]?3:d>=th[1]?2:d>=th[0]?1:0}
 function ascMul(i){return[1,3,9,27][ascTier(i)]}
@@ -12,11 +12,11 @@ function ascName(n,k){return k?n+' '+'+'.repeat(k):n}
 /* ---- generators: the player chooses which owned items produce stardust ---- */
 function genSlots(){return hasRule("Time's Arrow Reversed")?3:1}
 function genList(){if(!S)return[];const sl=genSlots(),out=[];(S.gens||[]).forEach(i=>{if(out.length<sl&&i>=0&&i<N&&S.own[i]>-2&&!out.includes(i))out.push(i)});
-for(let i=N-1;i>=0&&out.length<sl;i--)if(S.own[i]>-2&&!out.includes(i))out.push(i);return out}
+if(out.length<sl){const own=[];for(let i=0;i<N;i++)if(S.own[i]>-2&&!out.includes(i))own.push(i);own.sort((a,b)=>K[b]-K[a]);for(const i of own){if(out.length>=sl)break;out.push(i)}}return out}
 function setGen(i,on){ensureS();let g=(S.gens||[]).filter(x=>x!==i&&S.own[x]>-2);if(on){if(genSlots()==1)g=[i];else{g.push(i);g=g.slice(-genSlots())}}S.gens=g;hudUI();genRowUI()}
 /* ---- Plus Ultra rolls: rule breakers need their layer reached, beyond-cap items need that layer's finale owned this run ---- */
-function roll1(){const L=geo()+D.lk;let i=-1;for(const o of PUI){if(L<o.k)continue;if(o.layer>S.rb)continue;if(o.pu=='beyond'&&!(S.own[LFIN[o.layer]]>-2))continue;i=o.i;break}
-if(i<0)i=biasPick(L);const M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!((MODS[j].rb||0)>S.rb)){m=j;break}S.rolls++;return[i,m]}
+function roll1(){const L=geo()+D.lk;let i=biasPick(L);for(const o of PUI){if(L<o.k||o.k<=K[i])continue;if(o.layer>S.rb)continue;if(o.pu=='beyond'&&!(S.own[LFIN[o.layer]]>-2))continue;i=o.i;break}
+const M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!((MODS[j].rb||0)>S.rb)){m=j;break}S.rolls++;return[i,m]}
 {const _d=doRolls;doRolls=function(n,manual){ensureS();const before=ASCI.map(ascTier),rk=Object.keys(S.rbk).length;_d(hasRule('Twin Dice')?n*2:n,manual);
 OBJ.forEach(o=>{if(o.pu=='rule'&&S.own[o.i]>-2&&!S.rbk[o.n]){S.rbk[o.n]=1;recalc();toast('Rule broken: '+o.n)}});
 ASCI.forEach((i,k)=>{const a=ascTier(i);if(a>before[k]){const first=a>(S.cxa[i]||0);S.cxa[i]=Math.max(S.cxa[i]||0,a);if(first&&(a==3||FINS.has(i)))playRaw('pu',{n:ascName(OBJ[i].n,a),sub:'Plus Ultra · ascended',i,k:0,tier:a});else toast('Ascended: '+ascName(OBJ[i].n,a))}});
@@ -36,13 +36,13 @@ function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||O
 let h='';if(own)h+=on?`<button data-a="off" class="on" title="Stop using this item">⚡ Generating${sl>1?' ('+(G.indexOf(curI)+1)+'/'+sl+')':''}</button>`:`<button data-a="on">⚡ Use as generator</button>`;if(manual)h+=`<button data-a="auto">Auto: rarest</button>`;
 const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;r.innerHTML=h}
 {const _iu=infoUI;infoUI=function(i,m){_iu(i,m);if(i>=0)genRowUI()}}
-{const _s=show;show=function(i,m){_s(i,m);if(i<0||!cur)return;const t=Math.max(ascTier(i),S&&S.cxa?S.cxa[i]:0);if(t>0&&!OBJ[i].pu){cur.add(puAura(OR[OBJ[i].c],t));$('nm').textContent+=' '+'+'.repeat(t)}if(OBJ[i].pu)cur.userData.fx=Object.assign({bloom:1.7,tint:[1.12,1.04,.86],tintA:.4},cur.userData.fx||{});genRowUI()}}
+{const _s=show;show=function(i,m){_s(i,m);if(i<0||!cur)return;const t=Math.max(ascTier(i),S&&S.cxa?S.cxa[i]:0);if(t>0&&!OBJ[i].pu){cur.add(puAura(OR[OBJ[i].c],t));$('nm').textContent+=' '+'+'.repeat(t)}if(OBJ[i].pu)cur.userData.fx=Object.assign({},cur.userData.fx||{},{bloom:1,tint:[1.08,1.03,.9],tintA:.3},OBJ[i].pu=='beyond'?{ex:-.3}:{});genRowUI()}}
 /* ---- shared Plus Ultra look: gold-white aura, rays, rising sparks ---- */
 function puAura(R,tier){const g=new THREE.Group(),n=tier||3;for(let k=0;k<n;k++){const m=new THREE.Mesh(new THREE.TorusGeometry(R*(1.25+k*.22),.012+k*.004,8,220),new THREE.MeshBasicMaterial({color:CC('#ffe7a0').multiplyScalar(1.6),...ADD}));m.rotation.set(HP+(k-1)*.35,k*.7,0);g.add(m)}
-const rays=new THREE.Mesh(new THREE.PlaneGeometry(R*7,R*7),sm(`void main(){vec2 q=vP.xy;float a=atan(q.y,q.x),r=length(q);float ray=pow(.5+.5*cos(a*12.+t*.4),18.)+pow(.5+.5*cos(a*7.-t*.25),24.)*.6;gl_FragColor=vec4(vec3(1.,.9,.6)*ray*exp(-r*.9)*.32*${(.5+n*.25).toFixed(2)},1.);}`,{},ADD));g.add(rays);
-const N_=Math.round(500*n),P=[],SD=[];for(let i=0;i<N_;i++){P.push(0,0,0);SD.push(Math.random(),Math.random(),Math.random())}
-g.add(XPT(XBG({position:[P,3],sd:[SD,3]}),new THREE.ShaderMaterial({uniforms:{t:U.t,R:{value:R}},vertexShader:`attribute vec3 sd;uniform float t,R;varying vec3 c;varying float a;void main(){float u=fract(sd.x+t*(.08+sd.y*.08));float an=sd.z*6.2832+u*2.;float rr=R*(1.1+sd.y*.6);vec3 p=vec3(cos(an)*rr,(u-.5)*R*2.6,sin(an)*rr);c=mix(vec3(1.,.85,.5),vec3(1.),sd.y);a=sin(u*3.1416);vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=(1.+sd.y*2.)*(80./-mv.z);gl_Position=projectionMatrix*mv;}`,fragmentShader:XPF,...ADD})));
-const bl=glow(0xffe8b0,R*2.2);bl.material.opacity=.35;g.add(bl);g.userData.isAura=1;const q=new THREE.Quaternion();
+const rays=new THREE.Mesh(new THREE.PlaneGeometry(R*7,R*7),sm(`void main(){vec2 q=vP.xy;float a=atan(q.y,q.x),r=length(q);float ray=pow(.5+.5*cos(a*12.+t*.4),18.)+pow(.5+.5*cos(a*7.-t*.25),24.)*.6;gl_FragColor=vec4(vec3(1.,.9,.6)*ray*exp(-r*1.1)*.16*${(.5+n*.25).toFixed(2)},1.);}`,{},ADD));g.add(rays);
+const N_=Math.round(110*n),P=[],SD=[];for(let i=0;i<N_;i++){P.push(0,0,0);SD.push(Math.random(),Math.random(),Math.random())}
+g.add(XPT(XBG({position:[P,3],sd:[SD,3]}),new THREE.ShaderMaterial({uniforms:{t:U.t,R:{value:R}},vertexShader:`attribute vec3 sd;uniform float t,R;varying vec3 c;varying float a;void main(){float u=fract(sd.x+t*(.08+sd.y*.08));float an=sd.z*6.2832+u*2.;float rr=R*(1.1+sd.y*.6);vec3 p=vec3(cos(an)*rr,(u-.5)*R*2.6,sin(an)*rr);c=mix(vec3(1.,.85,.5),vec3(1.),sd.y);a=sin(u*3.1416)*.45;vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=(.8+sd.y*1.2)*(80./-mv.z);gl_Position=projectionMatrix*mv;}`,fragmentShader:XPF,...ADD})));
+const bl=glow(0xffe8b0,R*1.6);bl.material.opacity=.18;g.add(bl);g.userData.isAura=1;const q=new THREE.Quaternion();
 const upd=()=>{const t=U.t.value;g.children.forEach((m,k)=>{if(m.geometry&&m.geometry.type=='TorusGeometry')m.rotation.z=t*(.15+k*.07)*(k%2?-1:1)});g.getWorldQuaternion(q);rays.quaternion.copy(q.invert().multiply(UC.quaternion))};g.children[0].onBeforeRender=upd;return g}
 /* ---- minigames: chooser once more than one exists ---- */
 const mgTarget2=()=>Math.round(55+Math.min(8,S.up.filter(id=>NODES[id]&&NODES[id].br==1).length*.2));
