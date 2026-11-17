@@ -2411,6 +2411,7 @@ return`<div class="tr ${n.leg?'lg':''} ${sel==n.id?'sel':''}" data-id="${n.id}">
 .card{position:relative;overflow:hidden;background:var(--card);border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)}
 .card::after{content:'';position:absolute;top:0;left:0;width:45%;height:100%;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(170,200,255,.07),transparent);transform:translateX(-120%);animation:sheen 9s ease-in-out infinite}
 #hud .card:nth-child(2)::after{animation-delay:4.5s}
+.card.pn{position:fixed;overflow:auto;overflow-x:hidden}
 @keyframes sheen{0%,70%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 .card::before{content:'';position:absolute;left:12px;right:12px;top:0;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(140,190,255,.7),transparent);opacity:.55}
 button{background:linear-gradient(180deg,rgba(28,38,78,.75),rgba(10,14,34,.75));transition:transform .15s,border-color .15s,box-shadow .15s}
@@ -2454,6 +2455,7 @@ x.beginPath();h.forEach((v,k)=>k?x.lineTo(X(k),Y(v)):x.moveTo(X(k),Y(v)));x.stro
 {const card=$('st').parentNode;const d=document.createElement('div');d.id='tele';d.innerHTML=`<div class="ring"><svg viewBox="0 0 44 44"><defs><linearGradient id="tg" x1="0" x2="1"><stop offset="0" stop-color="#5ff3ff"/><stop offset="1" stop-color="#b07bff"/></linearGradient></defs><circle class="rbg" cx="22" cy="22" r="19"/><circle class="rfg" id="tcr" cx="22" cy="22" r="19"/><circle class="rspin" cx="22" cy="22" r="19"/></svg><div><div class="big" id="tcd">—</div><small class="k" id="tcm">cooldown</small></div></div>
 <span class="k">Luck</span><span class="v" id="tlk"></span><div class="bar"><i id="tlkb" style="background:linear-gradient(90deg,#ffd27a,#ff9d4a)"></i></div>
 <span class="k opt">Mod luck</span><span class="v opt" id="tml"></span>
+<span class="k">Total rolls</span><span class="v" id="ttr"></span>
 <span class="k"><span class="live"></span>Rolls/min</span><span class="v" id="trm"></span>
 <span class="k">Found</span><span class="v" id="tfd"></span><div class="bar"><i id="tfdb" style="background:linear-gradient(90deg,#5ff3ff,#7cff9a)"></i></div>
 <span class="k">Next new find</span><span class="v" id="tnx"></span>
@@ -2464,7 +2466,7 @@ function teleUI(){if(!S||!D)return;ensureS();const cd=cdn(),pn=pNew(),mc=Math.mi
 $('tcd').textContent=fCD(cd);$('tcm').textContent=hasAuto()?(S.autoOn?'cooldown · auto':'cooldown · auto off'):'cooldown';
 if(_tmaxS!==S.rb){_tmaxS=S.rb;_tmaxK=Math.max(1,...OBJ.filter(o=>!o.pu&&(o.layer||0)<=S.rb).map(o=>o.k))}
 $('tlk').innerHTML='×10<sup>'+D.lk.toFixed(1)+'</sup>';$('tlkb').style.width=Math.min(100,D.lk/_tmaxK*100)+'%';$('tml').innerHTML='×10<sup>'+D.ml.toFixed(1)+'</sup>';
-const rl=TEL.rl,rpm=rl.length>1?(rl[rl.length-1][1]-rl[0][1])/Math.max(1,(rl[rl.length-1][0]-rl[0][0]))*60:0;$('trm').textContent=rpm>0?fmt(rpm):'—';
+const rl=TEL.rl,rpm=rl.length>1?(rl[rl.length-1][1]-rl[0][1])/Math.max(1,(rl[rl.length-1][0]-rl[0][0]))*60:0;$('trm').textContent=rpm>0?fmt(rpm):'—';$('ttr').textContent=fmtI(S.rolls);
 const c=cnt(),a=avail();$('tfd').textContent=c+' / '+a;$('tfdb').style.width=Math.min(100,c/Math.max(1,a)*100)+'%';
 $('tnx').textContent=pn>0?probT(pn)+' · ~'+fT(cd/pn):'all found';$('tmd').textContent=probT(mc);$('trt').textContent=fT(S.rt||0)}
 function ringUI(){const t=$('tele');if(!t||!S)return;const cd=cdn(),auto=hasAuto()&&S.autoOn,p=auto?Math.min(1,acc/cd):1-Math.min(1,cdLeft/cd),fast=cd<.3;
