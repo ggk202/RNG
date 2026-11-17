@@ -1396,8 +1396,8 @@ let DIAG=0;const DXN=['normal','no background stars','no glow sprites','no parti
 function diagApply(){if(!cur)return;uStars.visible=DIAG==1?false:(KEYS[OBJ[curI].c]!='bh'&&!cur.userData.sky);cur.visible=DIAG!=4;cur.traverse(x=>{if(x.isSprite)x.visible=DIAG!=2;if(x.isPoints)x.visible=DIAG!=3;if(x.isLine)x.visible=DIAG!=6})}
 {const _p=post;post=function(sc,cam){if(sc===US&&DIAG)diagApply();if(DIAG==5&&sc===US){rd.setRenderTarget(null);rd.render(sc,cam);return}_p(sc,cam)}}
 /* ---------- init + loop ---------- */
-S=fresh();recalc();try{const s=localStorage.getItem('csms');if(s&&!imp(s,true)){S=fresh();recalc()}}catch(e){}
-setInterval(()=>{try{localStorage.setItem('csms',sv())}catch(e){}},5000);
+S=fresh();recalc();/* the stored save is loaded at the end of the script (see 'boot'), once every system it touches exists */
+setInterval(()=>{try{if(!SAVE_OK)return;localStorage.setItem('csms',sv())}catch(e){}},5000);
 const b0=best();show(b0<0?0:b0,b0<0?-1:S.own[b0]);setView('u');
 function resize(){rd.setSize(innerWidth,innerHeight);mkTargets();UC.aspect=TC.aspect=innerWidth/innerHeight;UC.updateProjectionMatrix();TC.updateProjectionMatrix()}addEventListener('resize',resize);resize();
 /* ---------- v14: lensed Black Hole Bomb + 20 bespoke exotic-physics models ---------- */
@@ -2484,6 +2484,14 @@ if(sp>=1){sp=0;for(let i=0;i<4;i++){const h=TEL.h[i];h.push(Math.log10(getW(i)+1
 {const _rb=doRebirth;doRebirth=function(){const r=_rb.apply(this,arguments);if(S){S.rt=0;TEL.h=[[],[],[],[]];TEL.rl=[]}return r}}
 {const _se=svEncode;svEncode=function(){const s=_se();try{const d=JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));d.rt=Math.round(S.rt||0);return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}catch(e){return s}}}
 {const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(ok)try{const c=cleanSave(str)||String(str).trim(),d=JSON.parse(decodeURIComponent(escape(atob(c.slice(c.indexOf(':')+1)))));S.rt=isFinite(+d.rt)&&+d.rt>=0?+d.rt:0}catch(e){S.rt=S.rt||0}TEL.h=[[],[],[],[]];TEL.rl=[];TEL.disp=[0,0,0,0];return ok}}
+/* ---------- boot: load the stored save only after every system above is defined ---------- */
+let SAVE_OK=true;
+{const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(ok&&!quiet&&!SAVE_OK){SAVE_OK=true;toast('Save imported. Autosave is back on.')}return ok}}
+{let s=null;try{s=localStorage.getItem('csms')}catch(e){}
+if(s){let ok=false;try{ok=imp(s,true)}catch(e){ok=false;try{console.error('save load failed',e)}catch(_){}}
+if(ok){try{localStorage.setItem('csms_prev',s)}catch(e){}}
+else{SAVE_OK=false;S=fresh();ensureS();recalc();try{localStorage.setItem('csms_bak_'+Date.now(),s)}catch(e){}setTimeout(()=>toast('Your save could not be loaded. It is kept as a backup and autosave is paused. Import a save to continue.'),1500)}}
+try{const b1=best();show(b1<0?0:b1,b1<0?-1:S.own[b1]);setView('u');hudUI();curHUD(true)}catch(e){}}
 let last=performance.now(),t=0,hc=0,ot=0;const ctr=V3(0,0,0),tc=V3(0,0,0);
 (function f(now){requestAnimationFrame(f);if(gfxSkip(now))return;const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
 gainAll(dt);const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}{const pv=(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%';if(pv!==lastP){lastP=pv;$('roll').style.setProperty('--p',pv)}}
