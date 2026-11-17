@@ -58,7 +58,7 @@ body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toa
 <div id="toast" class="card"></div>
 <div id="info" class="card"><div id="ib"><span id="tb" class="badge"></span><span id="cat"></span></div><h2 id="nm">—</h2><div id="ds"></div><div id="sb">Roll the cosmos</div><div id="md"></div></div>
 <div id="node" class="card"></div><div id="tsum" class="card"></div>
-<div id="cxp" class="pn card"><b>Codex</b> <small id="cxc"></small> <label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label><div id="dbgtools" style="display:none;clear:both;padding-top:6px"><button id="dbrb">Debug: jump to rebirth</button> <button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button></div><div id="cxt"></div><input id="cxs" type="search" placeholder="Search discovered objects…" autocomplete="off"><div id="cx" style="margin-top:8px"></div></div>
+<div id="cxp" class="pn card"><b>Codex</b> <small id="cxc"></small> <label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label><div id="dbgtools" style="display:none;clear:both;padding-top:6px"><button id="dbrb">Debug: jump to rebirth</button> <button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button> <button id="dbdx">Dots test: normal</button></div><div id="cxt"></div><input id="cxs" type="search" placeholder="Search discovered objects…" autocomplete="off"><div id="cx" style="margin-top:8px"></div></div>
 <div id="svp" class="pn card"><b>Save / Load</b><p style="color:var(--dim)">Copy the string to export. Paste a string and press Import to restore.</p><textarea id="sv" spellcheck="false"></textarea><p><button id="ex">Export</button> <button id="im">Import</button> <button id="rs">Reset</button> <button id="bl">Bloom: on</button> <span id="sm"></span></p></div>
 <div id="rbp" class="pn card"></div><div id="shp" class="pn card"></div>
 <div id="csov"><div class="lb t"></div><div class="lb b"></div><div id="cscap"><div id="cst"></div><div id="css"></div></div><div id="csbtns"><button id="csskipall" style="display:none">Skip all</button> <button id="csskip">Skip ▸</button></div></div>
@@ -1366,6 +1366,10 @@ function askTwice(b,fn){if(b.dataset.armed){delete b.dataset.armed;b.textContent
 $('dbrb').onclick=()=>askTwice($('dbrb'),()=>{ensureS();const f=LFIN[Math.min(S.rb,MAXRB)];if(S.own[f]<=-2){S.own[f]=-1;S.cx[f]|=1}hideP();openRebirth()});
 $('dbac').onclick=()=>{ensureS();S.rc+=100;toast('+100 aether (debug)')};
 $('dbmg').onclick=()=>askTwice($('dbmg'),()=>{ensureS();S.mg[1]=true;toast('Dyson gate passed (debug): the Cosmogenesis Engine can now be rolled')});
+let DIAG=0;const DXN=['normal','no background stars','no glow sprites','no particles','no model','no post-processing','no lines'];
+$('dbdx').onclick=()=>{DIAG=(DIAG+1)%DXN.length;$('dbdx').textContent='Dots test: '+DXN[DIAG];toast('Dots test '+DIAG+': '+DXN[DIAG])};
+function diagApply(){if(!cur)return;uStars.visible=DIAG==1?false:(KEYS[OBJ[curI].c]!='bh'&&!cur.userData.sky);cur.visible=DIAG!=4;cur.traverse(x=>{if(x.isSprite)x.visible=DIAG!=2;if(x.isPoints)x.visible=DIAG!=3;if(x.isLine)x.visible=DIAG!=6})}
+{const _p=post;post=function(sc,cam){if(sc===US&&DIAG)diagApply();if(DIAG==5&&sc===US){rd.setRenderTarget(null);rd.render(sc,cam);return}_p(sc,cam)}}
 /* ---------- init + loop ---------- */
 S=fresh();recalc();try{const s=localStorage.getItem('csms');if(s&&!imp(s,true)){S=fresh();recalc()}}catch(e){}
 setInterval(()=>{try{localStorage.setItem('csms',sv())}catch(e){}},5000);

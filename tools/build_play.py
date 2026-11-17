@@ -15,12 +15,12 @@ rep('<title>Cosmic Roll Dev</title>', '<title>Cosmic Roll</title>')
 # 1. UI: debug checkbox + debug tool buttons -> inert hidden stubs (JS still finds the ids)
 rep('<label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label>'
     '<div id="dbgtools" style="display:none;clear:both;padding-top:6px"><button id="dbrb">Debug: jump to rebirth</button> '
-    '<button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button></div>',
+    '<button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button> <button id="dbdx">Dots test: normal</button></div>',
     '<input type="checkbox" id="dbg" hidden disabled><div id="dbgtools" hidden></div>')
 # 2. Debug mode can never switch on
 rep("$('dbg').onchange=e=>{DBG=e.target.checked;", "$('dbg').onchange=e=>{DBG=false;")
 # 3. Drop the debug tool handlers (their buttons no longer exist)
-for k in ('dbrb', 'dbac', 'dbmg'):
+for k in ('dbrb', 'dbac', 'dbmg', 'dbdx'):
     n = len(re.findall(r"^\$\('%s'\)\.onclick=.*$" % k, s, flags=re.M))
     assert n == 1, 'build_play: handler for ' + k
     s = re.sub(r"^\$\('%s'\)\.onclick=.*\n" % k, '', s, flags=re.M)

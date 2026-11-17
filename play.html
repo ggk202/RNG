@@ -1363,6 +1363,9 @@ recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,Math.max(0,(Date.now()-d.
 /* ---------- debug shortcuts (they change the real save) ---------- */
 function askTwice(b,fn){if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl;fn();return}b.dataset.lbl=b.textContent;b.dataset.armed=1;b.textContent='Tap again to confirm';setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl}},4000)}
 
+let DIAG=0;const DXN=['normal','no background stars','no glow sprites','no particles','no model','no post-processing','no lines'];
+function diagApply(){if(!cur)return;uStars.visible=DIAG==1?false:(KEYS[OBJ[curI].c]!='bh'&&!cur.userData.sky);cur.visible=DIAG!=4;cur.traverse(x=>{if(x.isSprite)x.visible=DIAG!=2;if(x.isPoints)x.visible=DIAG!=3;if(x.isLine)x.visible=DIAG!=6})}
+{const _p=post;post=function(sc,cam){if(sc===US&&DIAG)diagApply();if(DIAG==5&&sc===US){rd.setRenderTarget(null);rd.render(sc,cam);return}_p(sc,cam)}}
 /* ---------- init + loop ---------- */
 S=fresh();recalc();try{const s=localStorage.getItem('csms');if(s&&!imp(s,true)){S=fresh();recalc()}}catch(e){}
 setInterval(()=>{try{localStorage.setItem('csms',sv())}catch(e){}},5000);
