@@ -59,8 +59,8 @@ body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toa
 <div id="info" class="card"><div id="ib"><span id="tb" class="badge"></span><span id="cat"></span></div><h2 id="nm">—</h2><div id="ds"></div><div id="sb">Roll the cosmos</div><div id="md"></div></div>
 <div id="node" class="card"></div><div id="tsum" class="card"></div>
 <div id="cxp" class="pn card"><b>Codex</b> <small id="cxc"></small> <label style="float:right;color:#ffe9a8"><input type="checkbox" id="dbg"> Debug: unlock all models</label><div id="dbgtools" style="display:none;clear:both;padding-top:6px"><button id="dbrb">Debug: jump to rebirth</button> <button id="dbac">Debug: +100 aether</button> <button id="dbmg">Debug: pass Dyson gate</button> <button id="dbdx">Dots test: normal</button></div><div id="cxt"></div><input id="cxs" type="search" placeholder="Search discovered objects…" autocomplete="off"><div id="cx" style="margin-top:8px"></div></div>
-<div id="svp" class="pn card"><b>Save / Load</b><p style="color:var(--dim)">Copy the string to export. Paste a string and press Import to restore.</p><textarea id="sv" spellcheck="false"></textarea><p><button id="ex">Export</button> <button id="im">Import</button> <button id="rs">Reset</button> <button id="bl">Bloom: on</button> <span id="sm"></span></p></div>
-<div id="rbp" class="pn card"></div><div id="shp" class="pn card"></div>
+<div id="svp" class="pn card"><b>Save / Load</b><p style="color:var(--dim)">Copy the string to export. Paste a string and press Import to restore.</p><textarea id="sv" spellcheck="false"></textarea><p><button id="ex">Export</button> <button id="im">Import</button> <button id="rs">Reset</button> <button id="bl">Bloom: on</button> <button id="gfxb">Graphics…</button> <span id="sm"></span></p></div>
+<div id="rbp" class="pn card"></div><div id="shp" class="pn card"></div><div id="gfxp" class="pn card"></div><div id="fpsd" style="display:none;position:fixed;left:calc(env(safe-area-inset-left,0px) + 8px);top:calc(env(safe-area-inset-top,0px) + 4px);z-index:40;font:11px ui-monospace,monospace;color:#9fb0d8;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px;pointer-events:none"></div>
 <div id="csov"><div class="lb t"></div><div class="lb b"></div><div id="cscap"><div id="cst"></div><div id="css"></div></div><div id="csbtns"><button id="csskipall" style="display:none">Skip all</button> <button id="csskip">Skip ▸</button></div></div>
 <div id="bar"><button id="b_u" class="on">Universe</button><button id="b_t">Skill Tree</button><button id="pv" style="display:none">◀</button><button id="roll">ROLL</button><button id="buyauto" style="display:none"></button><button id="auto" style="display:none">AUTO</button><button id="nx" style="display:none">▶</button><select id="dmod" style="display:none"></select><select id="dcs" style="display:none"></select><button id="csb" style="display:none">▶ Formation</button><button id="ab" style="display:none">Auto-buy: OFF</button><select id="vmod" style="display:none"></select><button id="mgbtn" style="display:none"></button><button id="shbtn" style="display:none"></button><button id="rbbtn" style="display:none"></button><button id="b_c">Codex</button><button id="b_s">Save</button></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -153,16 +153,19 @@ if(top&&(nw.length||manual))show(top[0],top[1]);if(nw.length)refreshCodex()}
 let tt;function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200)}
 /* ---------- three setup ---------- */
 const TOUCH=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>1;
-const rd=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});rd.setPixelRatio(Math.min(devicePixelRatio,TOUCH?1.5:2));document.body.prepend(rd.domElement);
-const U={t:{value:0}};
+const GFXP={battery:{ratio:1,fps:30,bloom:1,hdr:0,aa:0,lens:.65,adapt:1},balanced:{ratio:1.25,fps:60,bloom:1,hdr:1,aa:0,lens:.8,adapt:1},high:{ratio:TOUCH?1.5:2,fps:60,bloom:2,hdr:1,aa:TOUCH?0:1,lens:1,adapt:0},ultra:{ratio:3,fps:0,bloom:2,hdr:1,aa:1,lens:1,adapt:0}};
+const GFX=(()=>{let g=null;try{g=JSON.parse(localStorage.getItem('csgfx'))}catch(e){}return Object.assign({preset:'high',fpsShow:0},GFXP.high,g||{})})();
+/* the canvas only ever receives one full-screen quad, so canvas-level MSAA was pure cost */
+const rd=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});rd.setPixelRatio(Math.min(devicePixelRatio||1,GFX.ratio));document.body.prepend(rd.domElement);
+const U={t:{value:0},lq:{value:GFX.lens}};
 const US=new THREE.Scene(),UC=new THREE.PerspectiveCamera(50,1,.1,1000),TS=new THREE.Scene(),TC=new THREE.PerspectiveCamera(55,1,.1,1000);
 const ADD={blending:THREE.AdditiveBlending,transparent:true,depthWrite:false,side:THREE.DoubleSide};
 const NZ=`float h(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
 float n(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float fbm(vec3 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*n(p);p=p*2.03+1.7;a*=.5;}return s;}`;
-const FH='varying vec3 vP,vN,vV,vWp;varying vec2 vU;uniform float t;'+NZ;
+const FH='varying vec3 vP,vN,vV,vWp;varying vec2 vU;uniform float t,lq;'+NZ;
 const VS=(d='')=>`varying vec3 vP,vN,vV,vWp;varying vec2 vU;uniform float t;void main(){vec3 p=position;${d}vP=p;vWp=(modelMatrix*vec4(p,1.)).xyz;vU=uv;vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(p,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`;
-const sm=(fs,ex={},o={},d='')=>new THREE.ShaderMaterial({uniforms:Object.assign({t:U.t},ex),vertexShader:VS(d),fragmentShader:FH+fs,...o});
+const sm=(fs,ex={},o={},d='')=>new THREE.ShaderMaterial({uniforms:Object.assign({t:U.t,lq:U.lq},ex),vertexShader:VS(d),fragmentShader:FH+fs,...o});
 const col=(h,s=.8,l=.55)=>new THREE.Color().setHSL(((h%1)+1)%1,s,l);
 const gs=r=>r()+r()+r()+r()-2;
 /* textures computed in code, not via a 2D canvas: iOS WebKit's anti-fingerprinting noise on canvas uploads showed up as coloured blotches in every glow */
@@ -291,7 +294,7 @@ const BHF=`uniform vec3 c;uniform float tilt,ri,rO;
 vec3 sky(vec3 d){vec3 col=vec3(0.);for(int k=0;k<3;k++){vec3 q=d*(60.+float(k)*70.),id=floor(q),f=fract(q)-.5;float r=h(id+float(k)*7.3);vec3 jj=vec3(h(id+1.7),h(id+4.1),h(id+9.3))-.5;float b=step(.94,r)*smoothstep(.3,0.,length(f-jj*.6))*(r-.94)*45.;col+=b*mix(vec3(1.,.7,.5),vec3(.6,.8,1.),h(id+3.3));}float band=exp(-pow(d.y*2.5+.2*sin(d.x*3.),2.));return col+vec3(.5,.45,.6)*band*fbm(d*4.)*.4;}
 void main(){vec3 pos=cameraPosition,v=normalize(vP-pos);float ct=cos(tilt),st=sin(tilt);pos=vec3(pos.x,pos.y*ct-pos.z*st,pos.y*st+pos.z*ct);v=vec3(v.x,v.y*ct-v.z*st,v.y*st+v.z*ct);
 vec3 acc=vec3(0.);float tr=1.,h2=dot(cross(pos,v),cross(pos,v));bool esc=false;
-for(int i=0;i<260;i++){float r2=dot(pos,pos),r=sqrt(r2);if(r<1.){tr=0.;break;}if(r>25.&&dot(pos,v)>0.){esc=true;break;}float dt=clamp(.04*r,.02,1.2);vec3 np=pos+v*dt,a=-1.5*h2*pos/(r2*r2*r),nv=normalize(v+a*dt);
+for(int i=0;i<260;i++){float r2=dot(pos,pos),r=sqrt(r2);if(r<1.){tr=0.;break;}if(r>25.&&dot(pos,v)>0.){esc=true;break;}float dt=clamp(.04*r,.02,1.2)/lq;vec3 np=pos+v*dt,a=-1.5*h2*pos/(r2*r2*r),nv=normalize(v+a*dt);
 if(pos.y*np.y<0.){float u=pos.y/(pos.y-np.y);vec3 hp=mix(pos,np,u);float rr=length(hp.xz);if(rr>ri&&rr<rO){float aa=atan(hp.z,hp.x)-t*2./(rr*sqrt(rr));float nz=fbm(vec3(cos(aa)*rr*1.1,sin(aa)*rr*1.1,rr*2.5))*.8+fbm(vec3(cos(aa)*rr*4.,sin(aa)*rr*4.,rr*9.))*.4;
 vec3 tg=normalize(vec3(-hp.z,0.,hp.x));float vo=min(.55,.7/sqrt(rr)),D=1./(1.-vo*dot(tg,-v));float T=pow(ri/rr,.75)*D;
 vec3 bc=mix(vec3(1.,.25,.05),mix(vec3(1.,.75,.4),vec3(.75,.85,1.),smoothstep(.8,1.5,T)),smoothstep(.25,.8,T))*mix(vec3(1.),c*1.8,.3);
@@ -318,22 +321,22 @@ G.bh=(o,r,g)=>{const c=col(o.h*.1+.05,1,.55),kerr=/Spinning|Extremal|Kerr|Ultra|
 const m=new THREE.Mesh(new THREE.SphereGeometry(200,48,32),sm(BHF,{c:{value:c},tilt:{value:tilt},ri:{value:kerr?1.8:3},rO:{value:/Quasar|Blazar|Super|Ultra/.test(o.n)?13:9}},{side:THREE.BackSide,depthWrite:false}));m.renderOrder=-1;g.add(m);
 if(/Quasar|Blazar|Supermassive|Ultramassive/.test(o.n)){const j=jetPair(col(.6,.7,.7),13,.6,/Blazar/.test(o.n)?3.5:2.2,.4);j.quaternion.setFromUnitVectors(V3(0,1,0),V3(0,Math.cos(tilt),-Math.sin(tilt)));g.add(j)}};
 /* post-processing: HDR scene -> bright pass -> 2-level gaussian bloom -> filmic composite */
-const HDR=(()=>{try{const x=new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType});rd.setRenderTarget(x);const g=rd.getContext(),ok=g.checkFramebufferStatus(g.FRAMEBUFFER)===g.FRAMEBUFFER_COMPLETE;rd.setRenderTarget(null);x.dispose();return ok}catch(e){rd.setRenderTarget(null);return false}})();
+const HDR=GFX.hdr!==0&&(()=>{try{const x=new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType});rd.setRenderTarget(x);const g=rd.getContext(),ok=g.checkFramebufferStatus(g.FRAMEBUFFER)===g.FRAMEBUFFER_COMPLETE;rd.setRenderTarget(null);x.dispose();return ok}catch(e){rd.setRenderTarget(null);return false}})();
 const RO={minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter,format:THREE.RGBAFormat,type:HDR?THREE.HalfFloatType:THREE.UnsignedByteType,depthBuffer:false};
-let rtS,B1,B1b,B2,B2b,BW=1,BH=1,bloom=true;
+let rtS,B1,B1b,B2,B2b,BW=1,BH=1,bloom=GFX.bloom>0;
 const QS=new THREE.Scene(),QC=new THREE.OrthographicCamera(-1,1,1,-1,0,1),QM=new THREE.Mesh(new THREE.PlaneGeometry(2,2));QS.add(QM);QM.frustumCulled=false;
 const mkP=f=>new THREE.ShaderMaterial({uniforms:{tx:{value:null},tx2:{value:null},tx3:{value:null},px:{value:new THREE.Vector2()},k:{value:1}},vertexShader:'varying vec2 u;void main(){u=uv;gl_Position=vec4(position.xy,0.,1.);}',fragmentShader:'varying vec2 u;uniform sampler2D tx,tx2,tx3;uniform vec2 px;uniform float k;'+f,depthTest:false,depthWrite:false});
 const PB=mkP(`void main(){vec3 c=texture2D(tx,u).rgb;float cs=c.r+c.g+c.b;c=(cs>=0.&&cs<6e4)?max(c,0.):vec3(0.);float l=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c*smoothstep(${HDR?'.75,1.8':'.55,.95'},l),1.);}`);
 const PBL=mkP(`void main(){vec2 d=px*k;vec3 s=texture2D(tx,u).rgb*.227027+(texture2D(tx,u+d*1.3846154).rgb+texture2D(tx,u-d*1.3846154).rgb)*.3162162+(texture2D(tx,u+d*3.2307692).rgb+texture2D(tx,u-d*3.2307692).rgb)*.0702703;gl_FragColor=vec4(s,1.);}`);
 const PC=mkP(`void main(){vec3 c=max(texture2D(tx,u).rgb,0.)+max(texture2D(tx2,u).rgb,0.)*.5+max(texture2D(tx3,u).rgb,0.)*.8;c=${HDR?'1.-exp(-c*1.35)':'c/(1.+c*.25)'};float v=smoothstep(1.3,.35,length(u-.5)*1.5);gl_FragColor=vec4(c*(.7+.3*v),1.);}`);
-function mkTargets(){const v=rd.getDrawingBufferSize(new THREE.Vector2());BW=v.x;BH=v.y;[rtS,B1,B1b,B2,B2b].forEach(x=>x&&x.dispose());const o={...RO,depthBuffer:true};rtS=(rd.capabilities.isWebGL2&&!TOUCH)?new THREE.WebGLMultisampleRenderTarget(BW,BH,o):new THREE.WebGLRenderTarget(BW,BH,o);const T=d=>new THREE.WebGLRenderTarget(Math.max(1,BW>>d),Math.max(1,BH>>d),RO);B1=T(1);B1b=T(1);B2=T(2);B2b=T(2)}
+function mkTargets(){const v=rd.getDrawingBufferSize(new THREE.Vector2());BW=v.x;BH=v.y;[rtS,B1,B1b,B2,B2b].forEach(x=>x&&x.dispose());const o={...RO,depthBuffer:true};rtS=(rd.capabilities.isWebGL2&&GFX.aa)?new THREE.WebGLMultisampleRenderTarget(BW,BH,o):new THREE.WebGLRenderTarget(BW,BH,o);const T=d=>new THREE.WebGLRenderTarget(Math.max(1,BW>>d),Math.max(1,BH>>d),RO);const s1=GFX.bloom==1?2:1;B1=T(s1);B1b=T(s1);B2=T(s1+1);B2b=T(s1+1)}
 function pass(m,tg,a,b,c,px,k){QM.material=m;const u=m.uniforms;u.tx.value=a;u.tx2.value=b||null;u.tx3.value=c||null;if(px)u.px.value.set(px[0],px[1]);u.k.value=k===undefined?1:k;rd.setRenderTarget(tg);rd.render(QS,QC)}
 function post(sc,cam){
 rd.setRenderTarget(rtS);rd.render(sc,cam);const w1=B1.width,h1=B1.height,w2=B2.width,h2=B2.height;
-pass(PB,B1,rtS.texture);pass(PBL,B1b,B1.texture,0,0,[1/w1,0]);pass(PBL,B1,B1b.texture,0,0,[0,1/h1]);pass(PBL,B2,B1.texture,0,0,[1/w2,0],0);
-for(const k of [1,2.5]){pass(PBL,B2b,B2.texture,0,0,[1/w2,0],k);pass(PBL,B2,B2b.texture,0,0,[0,1/h2],k)}
+if(bloom){pass(PB,B1,rtS.texture);pass(PBL,B1b,B1.texture,0,0,[1/w1,0]);pass(PBL,B1,B1b.texture,0,0,[0,1/h1]);pass(PBL,B2,B1.texture,0,0,[1/w2,0],0);
+for(const k of [1,2.5]){pass(PBL,B2b,B2.texture,0,0,[1/w2,0],k);pass(PBL,B2,B2b.texture,0,0,[0,1/h2],k)}}
 setFX(sc===US);pass(PC2,null,rtS.texture,B1.texture,B2.texture)}
-addEventListener('keydown',e=>{if(e.code=='KeyB'&&e.target.tagName!='TEXTAREA')bloom=!bloom});
+addEventListener('keydown',e=>{if(e.code=='KeyB'&&e.target.tagName!='TEXTAREA')$('bl').onclick()});
 /* ---------- v3: sky, relativistic jets ---------- */
 function deepSky(){const P=[],C=[],S_=[];for(let i=0;i<7000;i++){const v=V3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize();if(i%2){v.y*=.18;v.normalize()}v.multiplyScalar(85+Math.random()*10);const m=Math.random(),c=col(m<.6?.6:m<.85?.08:0,.45,.7+Math.random()*.3),b=.5+Math.random()*.5;P.push(v.x,v.y,v.z);C.push(c.r*b,c.g*b,c.b*b);S_.push(1.2+Math.pow(Math.random(),4)*6)}
 const p=pts(P,C,S_),grp=new THREE.Group();
@@ -868,7 +871,7 @@ float b2=dot(cross(pos,v),cross(pos,v)),R0=thr*(dl>0.?max(.06,.55+.45*sin(t*.5))
 for(int i=0;i<230;i++){float r2=dot(pos,pos),r=sqrt(r2);if(r>25.&&dot(pos,v)>0.){esc=true;break;}
 if(r<R0){if(md<.5){vec3 nn=pos/r;pos=nn*(R0*R0/r)*1.003;v=reflect(v,nn);oth=!oth;b2=dot(cross(pos,v),cross(pos,v));acc+=tr*c*.12;continue;}
 if(md<1.5){vec3 nn=pos/r;float f=pow(1.-abs(dot(nn,v)),2.),pat=fbm(nn*5.+vec3(t*.15));acc+=tr*(c*(.12+pat*pat*1.6)+c2*f*2.2);tr=0.;break;}}
-float dt=clamp(.04*r,.012,1.2);vec3 np=pos+v*dt;float rr=max(r,.3);vec3 a=-bs*b2*pos/(rr*rr*rr*rr*rr);if(md>2.5)a*=-.5;
+float dt=clamp(.04*r,.012,1.2)/lq;vec3 np=pos+v*dt;float rr=max(r,.3);vec3 a=-bs*b2*pos/(rr*rr*rr*rr*rr);if(md>2.5)a*=-.5;
 if(md>1.5)acc+=tr*c*exp(-r*r*(md>2.5?1.2:10.))*dt*(md>2.5?(1.+1.4*fbm(pos*2.-normalize(pos+1e-4)*t*.8)):3.);
 if(dk>.5&&pos.y*np.y<0.){float u=pos.y/(pos.y-np.y);vec3 hp=mix(pos,np,u);float q2=length(hp.xz);if(q2>ri&&q2<rO){float aa=atan(hp.z,hp.x)-t*2./(q2*sqrt(q2));float nz=fbm(vec3(cos(aa)*q2*1.1,sin(aa)*q2*1.1,q2*2.5))*.8+fbm(vec3(cos(aa)*q2*4.,sin(aa)*q2*4.,q2*9.))*.4;vec3 tg=normalize(vec3(-hp.z,0.,hp.x));float vo=min(.55,.7/sqrt(max(q2,.5))),D=1./(1.-vo*dot(tg,-v));float RI=max(ri,.3),T=pow(RI/q2,.75)*D;vec3 bc=mix(c2,mix(vec3(1.,.8,.5),vec3(.8,.9,1.),smoothstep(.8,1.5,T)),smoothstep(.25,.8,T));float I=pow(RI/max(q2,RI),1.6)*(.25+nz*1.6)*D*D*D*smoothstep(ri,ri+.3,q2)*smoothstep(rO,rO-2.,q2)*4.;float al=clamp(.75*smoothstep(ri,ri+.3,q2)*smoothstep(rO,rO-2.,q2)*(.4+nz),0.,.92);acc+=tr*bc*I*al;tr*=1.-al;}}
 pos=np;v=normalize(v+a*dt);}
@@ -1318,7 +1321,7 @@ acc+=cover()*dt;if(t>=T)finish();head()}draw()};intro();raf=requestAnimationFram
 /* ---------- rebirth, shop, UI ---------- */
 const rbGain=()=>30*((S.rb||0)+1)+Math.floor(cnt()/4)+3*echoCount();
 const canRebirth=()=>S.own[LFIN[Math.min(S.rb,MAXRB)]]>-2;
-function hideP(){['cxp','svp','rbp','shp'].forEach(id=>{const e=$(id);if(e)e.style.display='none'})}
+function hideP(){['cxp','svp','rbp','shp','gfxp'].forEach(id=>{const e=$(id);if(e)e.style.display='none'})}
 function openRebirth(){hideP();const p=$('rbp');p.style.display='block';const nx=S.rb+1;if(nx>MAXRB){p.innerHTML=`<b>Beyond ${LNAME[S.rb]}</b><p>You've reached the edge of what exists so far: Layer ${ROMAN(nx)} (${LNAME[nx]}) is still being built.</p><button id="rbc">Close</button>`;$('rbc').onclick=hideP;return}
 let sel=S.cst||'bal';const draw=()=>{p.innerHTML=`<b>Rebirth ${ROMAN(nx)}: ${LNAME[nx]}</b><p>Collapse this universe into a new one. You gain <b>${rbGain()} aether</b> (30×${nx} for the layer, +1 per 4 discoveries, +3 per Echo).</p>
 <p><b>Kept:</b> codex (every model and every modifier ever seen), aether, shop upgrades, minigame progress.<br><b>Reset:</b> stardust, skill tree, collection, rolls, auto-roll${S.shop.auto?' (restored by Inherited Automation)':''}.</p>
@@ -1391,7 +1394,7 @@ vec3 sky(vec3 d){vec3 col=vec3(0.);for(int k=0;k<3;k++){vec3 q=d*(60.+float(k)*7
 void main(){const float ti=.32;vec3 pos=cameraPosition/M,v=normalize(vP-cameraPosition);float ct=cos(ti),st=sin(ti);pos=vec3(pos.x,pos.y*ct-pos.z*st,pos.y*st+pos.z*ct);v=vec3(v.x,v.y*ct-v.z*st,v.y*st+v.z*ct);
 vec3 acc=vec3(0.);float tr=1.;vec3 L=cross(pos,v);float h2=dot(L,L);bool esc=false;float Rb=R+bu*22.;
 for(int i=0;i<240;i++){float r2=dot(pos,pos),r=sqrt(r2);if(r<1.){tr=0.;break;}if(r>26.&&dot(pos,v)>0.){esc=true;break;}
-float dt=clamp(.04*r,.015,1.1);vec3 np=pos+v*dt,ac=-1.5*h2*pos/(r2*r2*r),nv=normalize(v+ac*dt);float nr=length(np);
+float dt=clamp(.04*r,.015,1.1)/lq;vec3 np=pos+v*dt,ac=-1.5*h2*pos/(r2*r2*r),nv=normalize(v+ac*dt);float nr=length(np);
 float cth=pos.y/r,st2=1.-cth*cth,ph=atan(pos.z,pos.x);
 if(erg>0.){float re=1.+.62*st2;if(r<re){float a2=ph-t*2.2/(r*r);float sw=fbm(vec3(cos(a2)*r*2.2,sin(a2)*r*2.2,pos.y*3.+t*.3));acc+=tr*mix(vec3(.25,.1,.75),vec3(.9,.4,1.),sw)*erg*sw*sw*dt*3.*smoothstep(re,re-.2,r);}}
 if(A>0.&&r<R){float x=clamp((r-1.)/(R-1.),0.,1.);float psi=sin(4.*ph-t*3.2+x*2.)*st2*st2*sin(3.1416*x);float e=psi*psi*A;acc+=tr*mix(vec3(1.,.35,.08),vec3(1.,.95,.85),clamp(A*.35,0.,1.))*e*dt*2.;}
@@ -1744,10 +1747,55 @@ const MOPT={'Molecular Hydrogen':{cloud:1,mx:1.9},'Water':{cloud:1},'Carbon Mono
 if(o.n=='Chlorophyll'){const ph=glow(0xff5a3a,.5);g.add(ph);const hl=glow(0x7aff8a,1);g.add(hl);onU(g,t=>{const x=(t%5)/5;if(x<.35){const u=x/.35;ph.visible=true;ph.position.set(4*(1-u),3.2*(1-u),2.2*(1-u));ph.material.color.setHSL(u<.5?0:.62,1,.6)}else ph.visible=false;const f=x>=.35?Math.exp(-(x-.35)*9):0;D.mats.forEach(m=>m.uniforms.fl.value=f*1.4);hl.scale.setScalar(.5+f*5);hl.material.opacity=f})}
 if(o.n=='Peptide Chain'){onU(g,t=>D.mats.forEach(m=>m.uniforms.wav.value=.35))}}}
 
+/* ---------- v16: performance + graphics settings ---------- */
+/* status text/HTML written by the 7 Hz UI tick is skipped when unchanged (no DOM churn, no relayout) */
+let QUIET=false;if(typeof Node!=='undefined'){const d1=Object.getOwnPropertyDescriptor(Node.prototype,'textContent'),d2=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');
+if(d1&&d1.set)Object.defineProperty(Node.prototype,'textContent',{get(){return d1.get.call(this)},set(v){if(QUIET&&d1.get.call(this)===String(v))return;d1.set.call(this,v)},configurable:true,enumerable:d1.enumerable});
+if(d2&&d2.set)Object.defineProperty(Element.prototype,'innerHTML',{get(){return d2.get.call(this)},set(v){v=String(v);if(QUIET&&this.__ih===v&&this.__ihf===this.firstChild&&this.__ihn===this.childNodes.length)return;d2.set.call(this,v);this.__ih=v;this.__ihf=this.firstChild;this.__ihn=this.childNodes.length},configurable:true,enumerable:d2.enumerable})}
+let lastF=0,ftE=16.7,scaleMul=1,lastP='',adLast=0,fpsN=0,fpsT=0,fpsV=0;
+const PANELS=['cxp','svp','rbp','shp','gfxp'];
+function panelOpen(){for(const id of PANELS){const e=$(id);if(e&&e.style.display==='block')return true}return false}
+function gfxCap(){let c=GFX.fps||0;if(view=='u'&&!CS.on&&panelOpen())c=c?Math.min(c,30):30;return c}
+function gfxSkip(now){const cap=gfxCap();if(cap&&now-lastF<1000/cap-2)return true;const d=now-lastF;lastF=now;if(d<250)ftE+=(d-ftE)*.06;fpsN++;
+if(now-fpsT>=1000){fpsV=Math.round(fpsN*1000/(now-fpsT));fpsN=0;fpsT=now;gfxInfo()}gfxAdapt(now,cap);return false}
+function gfxAdapt(now,cap){if(!GFX.adapt||CS.on||MG.on||now-adLast<2500)return;adLast=now;const tg=1000/(cap||60);
+if(ftE>tg*1.3&&scaleMul>.6){scaleMul=Math.max(.6,+(scaleMul-.1).toFixed(2));applyRes()}else if(ftE<tg*1.08&&scaleMul<1){scaleMul=Math.min(1,+(scaleMul+.05).toFixed(2));applyRes()}}
+function applyRes(){rd.setPixelRatio(Math.min(devicePixelRatio||1,GFX.ratio)*scaleMul);resize()}
+function gfxSave(){try{localStorage.setItem('csgfx',JSON.stringify(GFX))}catch(e){}}
+function gfxMatch(){for(const k in GFXP){const p=GFXP[k];if(Object.keys(p).every(q=>+GFX[q]===+p[q]))return k}return'custom'}
+function applyGfx(){U.lq.value=GFX.lens;bloom=GFX.bloom>0;scaleMul=1;applyRes();blT();GFX.preset=gfxMatch();gfxSave()}
+/* skip the whole 3D frame while the minigame covers the screen */
+{const _p=post;post=function(sc,cam){if(MG.on)return;_p(sc,cam)}}
+/* Bloom button and B key drive the graphics setting */
+$('bl').onclick=()=>{if(GFX.bloom){GFX._lb=GFX.bloom;GFX.bloom=0}else GFX.bloom=GFX._lb||2;applyGfx();if($('gfxp').style.display==='block')gfxUI()};
+/* ---- graphics panel ---- */
+const GPN={battery:'Battery saver',balanced:'Balanced',high:'High',ultra:'Ultra',custom:'Custom'};
+const GOPT=[['ratio','Render resolution','Pixels rendered per screen point. Biggest effect on GPU load.',[[.75,'0.75×'],[1,'1×'],[1.25,'1.25×'],[1.5,'1.5×'],[2,'2×'],[3,'Native']]],
+['fps','Frame rate cap','Fewer frames means less heat and battery. Menus always drop to 30.',[[30,'30 fps'],[60,'60 fps'],[0,'Unlimited']]],
+['bloom','Bloom','Glow around bright objects. Low uses a smaller, softer glow buffer.',[[0,'Off'],[1,'Low'],[2,'High']]],
+['hdr','HDR rendering','High dynamic range buffers; richer highlights. Applies after reload.',[[1,'On'],[0,'Off']]],
+['aa','Antialiasing','Smooth edges (MSAA). Costly on tablets.',[[0,'Off'],[1,'On']]],
+['lens','Lensing quality','Ray-march step size for black holes, wormholes and lensed skies.',[[.65,'Low'],[.8,'Medium'],[1,'High']]],
+['adapt','Adaptive resolution','Lowers resolution temporarily when the frame rate drops, raises it again when it recovers.',[[0,'Off'],[1,'On']]],
+['fpsShow','FPS counter','Small readout in the corner.',[[0,'Off'],[1,'On']]]];
+function gfxInfo(){const fd=$('fpsd');if(fd){fd.style.display=GFX.fpsShow?'block':'none';if(GFX.fpsShow)fd.textContent=fpsV+' fps · '+BW+'×'+BH+(scaleMul<1?' · adaptive '+Math.round(scaleMul*100)+'%':'')}
+const gi=$('gfxi');if(gi&&$('gfxp').style.display==='block')gi.textContent=`${fpsV} fps · rendering ${BW}×${BH}${scaleMul<1?' (adaptive '+Math.round(scaleMul*100)+'%)':''} · ${HDR?'HDR':'8-bit'} · ${rd.capabilities.isWebGL2?'WebGL 2':'WebGL 1'}`}
+function gfxUI(){const p=$('gfxp'),hdrNow=HDR?1:0;
+p.innerHTML=`<b>Graphics</b><p style="color:var(--dim);margin:.4em 0">Settings are stored on this device only. Preset: <b id="gfxpn">${GPN[GFX.preset]||'Custom'}</b></p>
+<div id="gfxps" style="display:flex;flex-wrap:wrap;gap:6px">${['battery','balanced','high','ultra'].map(k=>`<button data-p="${k}" class="${GFX.preset==k?'on':''}">${GPN[k]}${k=='high'?' (default)':''}</button>`).join('')}</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;margin-top:12px">${GOPT.map(([k,l,d,o])=>`<div><div>${l}</div><small style="color:var(--dim)">${d}</small></div><select data-k="${k}">${o.map(([v,t])=>`<option value="${v}" ${+GFX[k]===v?'selected':''}>${t}</option>`).join('')}</select>`).join('')}</div>
+${(GFX.hdr?1:0)!==hdrNow?'<p style="color:#ffd27a">HDR change takes effect after reloading. <button id="gfxrl">Reload now</button></p>':''}
+<p id="gfxi" style="color:var(--dim)"></p><p><button id="gfxc">Close</button></p>`;
+p.querySelectorAll('#gfxps button').forEach(b=>b.onclick=()=>{Object.assign(GFX,GFXP[b.dataset.p]);applyGfx();gfxUI()});
+p.querySelectorAll('select').forEach(s=>s.onchange=()=>{GFX[s.dataset.k]=+s.value;applyGfx();gfxUI()});
+$('gfxc').onclick=hideP;const rl=$('gfxrl');if(rl)rl.onclick=()=>{try{location.reload()}catch(e){}};gfxInfo()}
+$('gfxb').onclick=()=>{hideP();$('gfxp').style.display='block';gfxUI()};
+applyGfx();
+
 let last=performance.now(),t=0,hc=0,ot=0;const ctr=V3(0,0,0),tc=V3(0,0,0);
-(function f(now){requestAnimationFrame(f);const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
-S.coins+=income()*dt;const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}$('roll').style.setProperty('--p',(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%');
-hc+=dt;if(hc>.15){hc=0;$('coin').textContent=fmt(S.coins);$('inc').textContent='+'+fmt(income())+'/s';autoUI();$('st').innerHTML=`Cooldown ${cd<.01?cd.toExponential(1):cd.toFixed(2)}s${hasAuto()?' · auto':''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmt(S.rolls)} rolls · ${cnt()}/${N}`;hudUI();if(view=='t'&&sel>=0)nodeUI()}
+(function f(now){requestAnimationFrame(f);if(gfxSkip(now))return;const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
+S.coins+=income()*dt;const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}{const pv=(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%';if(pv!==lastP){lastP=pv;$('roll').style.setProperty('--p',pv)}}
+hc+=dt;if(hc>.15){hc=0;QUIET=true;try{$('coin').textContent=fmt(S.coins);$('inc').textContent='+'+fmt(income())+'/s';autoUI();$('st').innerHTML=`Cooldown ${cd<.01?cd.toExponential(1):cd.toFixed(2)}s${hasAuto()?' · auto':''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmt(S.rolls)} rolls · ${cnt()}/${N}`;hudUI();if(view=='t'&&sel>=0)nodeUI()}finally{QUIET=false}}
 if(CS.on){csStep(dt)}else if(view=='u'){if(cur){if(!drag&&!cur.userData.noSpin)cur.rotation.y+=odt*.25;cur.userData.u&&cur.userData.u(ot);updFX(dt,odt);(cur.userData.bill||[]).forEach(b=>{b.quaternion.copy(cur.quaternion).invert().multiply(UC.quaternion)});}
 if(!drag)VW.u.th+=dt*.1;setCam(UC,VW.u,ctr);post(US,UC)}
 else{if(!drag)VW.t.th+=dt*.04;
