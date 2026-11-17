@@ -2064,11 +2064,11 @@ const M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!(
 OBJ.forEach(o=>{if(o.pu=='rule'&&S.own[o.i]>-2&&!S.rbk[o.n]){S.rbk[o.n]=1;recalc();toast('Rule broken: '+o.n)}});
 ASCI.forEach((i,k)=>{const a=ascTier(i);if(a>before[k]){const first=a>(S.cxa[i]||0);S.cxa[i]=Math.max(S.cxa[i]||0,a);if(first&&(a==3||FINS.has(i)))playRaw('pu',{n:ascName(OBJ[i].n,a),sub:'Plus Ultra · ascended',i,k:0,tier:a});else toast('Ascended: '+ascName(OBJ[i].n,a))}});
 if(rk!==Object.keys(S.rbk).length)hudUI()}}
-{const _r=recalc;recalc=function(){_r();if(!S)return;if(hasRule('Rewound Clock'))D.sp*=1.4;if(S.rb>=2){let n=0;for(let i=LEND[1]+1;i<=LEND[2];i++)if(S.own[i]>-2)n++;D.lk+=.13*n}}}
+{const _r=recalc;recalc=function(){_r();if(!S)return;if(hasRule('Rewound Clock'))D.sp*=1.4;if(S.rb>=2){let n=0;for(let i=LEND[1]+1;i<=LEND[2];i++)if(S.own[i]>-2)n++;D.lk+=.037*n}}}
 {const _d2=doRolls;doRolls=function(n,m){const before=S.rb>=2?S.own.slice(LEND[1]+1,LEND[2]+1).filter(x=>x>-2).length:0;_d2(n,m);if(S.rb>=2&&S.own.slice(LEND[1]+1,LEND[2]+1).filter(x=>x>-2).length!==before)recalc()}}
 /* ---- rebirth ---- */
 {const _rb=doRebirth;doRebirth=function(cst){_rb(cst);S.gens=[];genRowUI()}}
-const LNEW=['','the Reborn modifier, 6 more nodes per skill branch, and the Dyson Builder minigame','decayed megastructures, +0.13 luck for every Deep Time discovery, the Recursive modifier, 6 more nodes per skill branch, and the Last Light minigame'];
+const LNEW=['','the Reborn modifier, 6 more nodes per skill branch, and the Dyson Builder minigame','decayed megastructures, +0.037 luck for every Deep Time discovery, the Recursive modifier, 6 more nodes per skill branch, and the Last Light minigame'];
 /* ---- saves: generators, rule breakers, ascended records ---- */
 {const _se=svEncode;svEncode=function(){const s=_se();try{const d=JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));d.gens=(S.gens||[]).filter(i=>i>=0&&i<N).map(i=>OBJ[i].n);d.rbk=Object.keys(S.rbk||{});const a={};OBJ.forEach(o=>{if(S.cxa&&S.cxa[o.i])a[o.n]=S.cxa[o.i]});d.cxa=a;return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}catch(e){return s}}}
 {const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(!ok)return ok;try{const c=cleanSave(str)||String(str).trim(),d=JSON.parse(decodeURIComponent(escape(atob(c.slice(c.indexOf(':')+1))))),by=new Map(OBJ.map(o=>[o.n,o.i]));ensureS();
