@@ -62,7 +62,7 @@ body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toa
 <div id="svp" class="pn card"><b>Save / Load</b><p style="color:var(--dim)">Copy the string to export. Paste a string and press Import to restore.</p><textarea id="sv" spellcheck="false"></textarea><p><button id="ex">Export</button> <button id="im">Import</button> <button id="rs">Reset</button> <button id="bl">Bloom: on</button> <button id="gfxb">Graphics…</button> <span id="sm"></span></p></div>
 <div id="rbp" class="pn card"></div><div id="shp" class="pn card"></div><div id="gfxp" class="pn card"></div><div id="fpsd" style="display:none;position:fixed;left:calc(env(safe-area-inset-left,0px) + 8px);top:calc(env(safe-area-inset-top,0px) + 4px);z-index:40;font:11px ui-monospace,monospace;color:#9fb0d8;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px;pointer-events:none"></div>
 <div id="csov"><div class="lb t"></div><div class="lb b"></div><div id="cscap"><div id="cst"></div><div id="css"></div></div><div id="csbtns"><button id="csskipall" style="display:none">Skip all</button> <button id="csskip">Skip ▸</button></div></div>
-<div id="bar"><button id="b_u" class="on">Universe</button><button id="b_t">Skill Tree</button><button id="pv" style="display:none">◀</button><button id="roll">ROLL</button><button id="buyauto" style="display:none"></button><button id="auto" style="display:none">AUTO</button><button id="nx" style="display:none">▶</button><select id="dmod" style="display:none"></select><select id="dcs" style="display:none"></select><button id="csb" style="display:none">▶ Formation</button><button id="ab" style="display:none">Auto-buy: OFF</button><select id="vmod" style="display:none"></select><button id="mgbtn" style="display:none"></button><button id="shbtn" style="display:none"></button><button id="rbbtn" style="display:none"></button><button id="b_c">Codex</button><button id="b_s">Save</button></div>
+<div id="bar"><button id="b_u" class="on">Universe</button><button id="b_t">Skill Tree</button><button id="pv" style="display:none">◀</button><button id="roll">ROLL</button><button id="buyauto" style="display:none"></button><button id="auto" style="display:none">AUTO</button><button id="nx" style="display:none">▶</button><select id="dmod" style="display:none"></select><select id="dcs" style="display:none"></select><button id="csb" style="display:none">▶ Formation</button><select id="vmod" style="display:none"></select><button id="mgbtn" style="display:none"></button><button id="shbtn" style="display:none"></button><button id="rbbtn" style="display:none"></button><button id="b_c">Codex</button><button id="b_s">Save</button></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const $=i=>document.getElementById(i);
@@ -396,7 +396,7 @@ cvs.addEventListener('pointerup',up);cvs.addEventListener('pointercancel',up);
 cvs.addEventListener('wheel',e=>{e.preventDefault();const s=VW[view];s.d=Math.min(170,Math.max(3,s.d*(1+e.deltaY*.001)))},{passive:false});
 const rc_=new THREE.Raycaster(),mv=new THREE.Vector2();
 function pickNode(e){mv.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);rc_.setFromCamera(mv,TC);const h=rc_.intersectObjects(nm.filter(m=>m.visible));sel=h.length?h[0].object.userData.id:-1;nodeUI()}
-function setView(v){view=v;$('b_u').classList.toggle('on',v=='u');$('b_t').classList.toggle('on',v=='t');$('roll').style.display=v=='u'?'':'none';$('ab').style.display=v=='t'?'':'none';$('pv').style.display=$('nx').style.display=$('dmod').style.display=$('dcs').style.display=(v=='u'&&DBG)?'':'none';$('info').style.display=v=='u'?'':'none';nodeUI()}
+function setView(v){view=v;$('b_u').classList.toggle('on',v=='u');$('b_t').classList.toggle('on',v=='t');$('roll').style.display=v=='u'?'':'none';$('pv').style.display=$('nx').style.display=$('dmod').style.display=$('dcs').style.display=(v=='u'&&DBG)?'':'none';$('info').style.display=v=='u'?'':'none';nodeUI()}
 $('b_u').onclick=()=>{setView('u');$('cxp').style.display=$('svp').style.display='none'};$('b_t').onclick=()=>{setView('t');$('cxp').style.display=$('svp').style.display='none'};
 const tog=(a,b)=>{const p=$(a),on=p.style.display!='block';$(b).style.display='none';p.style.display=on?'block':'none';return on};
 $('b_c').onclick=()=>{if(tog('cxp','svp'))refreshCodex()};$('b_s').onclick=()=>{if(tog('svp','cxp'))$('sv').value=''};
@@ -587,10 +587,8 @@ if(t.dataset.m!==undefined){DM=+t.dataset.m;$('dmod').value=DM;setView('u');show
 const i=+t.dataset.i;show(i,S.own[i]);setView('u')};
 /* ---------- v6: auto-buy ---------- */
 function cheapN(){let b=null;NODES.forEach(n=>{if(availN(n)&&(!b||n.cost<b.cost))b=n});return b}
-function abUI(){const b=$('ab');b.textContent='Auto-buy: '+(S.ab?'ON':'OFF');b.classList.toggle('on',!!S.ab)}
-function abLine(){if(!S.ab)return'';const nx=cheapN();return'<br><small style="color:#8fe39a">Auto-buy on'+(nx?' · next: '+nx.name+' for '+fmt(nx.cost):' · tree complete')+'</small>'}
-$('ab').onclick=()=>{S.ab=!S.ab;abUI();toast('Auto-buy '+(S.ab?'on: buys the cheapest node each second':'off'))};
-setInterval(()=>{abUI();if(!S.ab)return;const n=cheapN();if(n&&S.coins>=n.cost){S.coins-=n.cost;S.up.push(n.id);recalc()}},1000);
+/* skill-tree auto-buy removed */function abUI(){}
+function abLine(){return''}
 /* ---------- v7: life, exotic life, wormholes, totality ---------- */
 const CC=x=>new THREE.Color(x);
 const MS=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:CC(c),roughness:.65},o||{}));
@@ -1170,7 +1168,7 @@ const LEND=[],LFIN=[];OBJ.forEach(o=>{LEND[o.layer]=o.i;LFIN[o.layer]=o.i});
 const CONSTS={bal:{n:'Balanced',d:'Our own universe’s constants.'},grav:{n:'Strong Gravity',d:'+1 luck; favours black holes, remnants, wormholes and megastructures; cooldown ×1.2',lk:1,sp:1/1.2,fav:['bh','remn','wh','mega']},fast:{n:'Fast Time',d:'Cooldown ÷1.6; −1 luck',sp:1.6,lk:-1},chem:{n:'Rich Chemistry',d:'+2 modifier luck; ×0.7 stardust; favours molecules, minerals and life',ml:2,cu:.7,fav:['mol','xtal','micro','flora','fauna']}};
 const SHOPV={luck:.4,time:1.08,dust:1.6,mod:.4,head:1};
 const SHOP=[{k:'luck',n:'Primordial Luck',d:'+0.4 luck',max:12,c0:8,g:1.45},{k:'time',n:'Quickened Time',d:'Cooldown ÷1.08',max:10,c0:8,g:1.45},{k:'dust',n:'Stardust Memory',d:'Stardust ×1.6',max:12,c0:6,g:1.4},{k:'mod',n:'Resonant Modifiers',d:'+0.4 modifier luck',max:10,c0:10,g:1.5},
-{k:'auto',n:'Inherited Automation',d:'Start every run with auto-roll and auto-buy',max:1,c0:15,g:1},{k:'head',n:'Head Start',d:'Start each run with 10^level stardust',max:6,c0:6,g:1.6},{k:'echo',n:'Echo Attunement',d:'Echo chance ×1.5',max:6,c0:12,g:1.5}];
+{k:'auto',n:'Inherited Automation',d:'Start every run with auto-roll unlocked',max:1,c0:15,g:1},{k:'head',n:'Head Start',d:'Start each run with 10^level stardust',max:6,c0:6,g:1.6},{k:'echo',n:'Echo Attunement',d:'Echo chance ×1.5',max:6,c0:12,g:1.5}];
 const shopCost=(u,l)=>Math.ceil(u.c0*Math.pow(u.g,l));
 function ensureS(){if(!S)return;const fresh=!S.cx;if(!S.cx)S.cx=new Array(N).fill(0);if(!S.cxe)S.cxe=new Array(N).fill(0);if(!S.ec)S.ec=new Array(N).fill(0);S.rb=S.rb||0;S.rc=S.rc||0;S.shop=S.shop||{};S.mg=S.mg||{};S.mgc=S.mgc||{};S.cst=S.cst||'bal';S.life=S.life||{runs:0,rolls:0};
 if(fresh)S.own.forEach((v,i)=>{if(v>-2)S.cx[i]|=1<<(v+1)})}
