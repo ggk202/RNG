@@ -1083,7 +1083,7 @@ try{const d=JSON.parse(decodeURIComponent(escape(atob(str.slice(ver[0].length)))
 const own=new Array(N).fill(-2),cn=new Array(N).fill(0);(Array.isArray(d.own)?d.own:[]).forEach(e=>{if(!Array.isArray(e))return;const i=nm(e[0]);if(i===undefined)return;const m=e[1]!==undefined&&modBy.has(e[1])?modBy.get(e[1]):-1;own[i]=Math.max(own[i],m)});
 if(d.cn&&typeof d.cn=='object')for(const k in d.cn){const i=nm(k),v=+d.cn[k];if(i!==undefined&&isFinite(v)&&v>=0)cn[i]=v}
 const keyId=new Map(NODES.filter(n=>n.key).map(n=>[n.key,n.id])),ups=(Array.isArray(d.up)?d.up:[]).map(k=>keyId.get(k)).filter(x=>x!==undefined),coins=+d.c;
-S={coins:isFinite(coins)&&coins>=0?coins:0,rolls:isFinite(+d.r)?+d.r:0,own,cn,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4})};recalc();if(quiet&&d.s)gainAll(Math.min(3600,Math.max(0,(Date.now()-d.s)/1000)));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
+S={coins:isFinite(coins)&&coins>=0?coins:0,rolls:isFinite(+d.r)?+d.r:0,own,cn,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4})};recalc();NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 /* ---------- v12: formation cutscenes ---------- */
 const CSS=new THREE.Scene();CSS.add(new THREE.AmbientLight(0x404060,.9));{const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(3,2,4);CSS.add(d)}const csSky=deepSky();CSS.add(csSky);
 const CS={on:false,t:0,tb:0,q:[],sc:null,st:null,grp:null,o:null,fx:{},imp:0,inv:0,red:0},CSU={t:{value:0}};
@@ -1382,7 +1382,7 @@ if(d.cx&&typeof d.cx=='object')for(const k in d.cx){const i=nm(k);if(i===undefin
 const keyId=new Map(NODES.filter(n=>n.key).map(n=>[n.key,n.id])),ups=(Array.isArray(d.up)?d.up:[]).map(k=>keyId.get(k)).filter(x=>x!==undefined),shop={};if(d.shop&&typeof d.shop=='object')SHOP.forEach(u=>{const l=Math.floor(num(d.shop[u.k],0));if(l)shop[u.k]=Math.min(l,u.max)});
 const mg={},mgc={};if(d.mg&&typeof d.mg=='object')for(const k in d.mg)if(d.mg[k])mg[k]=true;if(d.mgc&&typeof d.mgc=='object')for(const k in d.mgc)mgc[k]=num(d.mgc[k],0);
 S={coins:num(d.c,0),rolls:num(d.r,0),own,cn,cx,cxe,ec,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4}),rb:Math.min(Math.floor(num(d.rb,0)),6),rc:Math.floor(num(d.rc,0)),shop,cst:CONSTS[d.cst]?d.cst:'bal',mg,mgc,life:d.life&&typeof d.life=='object'?{runs:num(d.life.runs,0),rolls:num(d.life.rolls,0)}:{runs:0,rolls:0}};
-recalc();if(quiet&&d.s)gainAll(Math.min(3600,Math.max(0,(Date.now()-d.s)/1000)));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
+recalc();NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 /* ---------- debug shortcuts (they change the real save) ---------- */
 function askTwice(b,fn){if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl;fn();return}b.dataset.lbl=b.textContent;b.dataset.armed=1;b.textContent='Tap again to confirm';setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl}},4000)}
 
@@ -2095,7 +2095,7 @@ S.gens=Array.isArray(d.gens)?d.gens.map(n=>by.get(n)).filter(i=>i!==undefined):[
 /* ---- UI: generator row under the item card, star in the HUD, tier suffix on names ---- */
 {const sb=$('sb');if(sb&&!$('genrow')){const d=document.createElement('div');d.id='genrow';d.style.cssText='margin-top:6px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap';sb.parentNode.insertBefore(d,sb.nextSibling);
 d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;if(a=='on')setGen(curI,true);else if(a=='off')setGen(curI,false);else if(a=='auto'){S.gens=[];hudUI();genRowUI()}})}}
-function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||OBJ[curI].pu=='rule'){r.innerHTML='';return}const own=S.own[curI]>-2,G=genList(),on=G.includes(curI),manual=(S.gens||[]).length>0,sl=genSlots();
+function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||OBJ[curI].pu=='rule'){r.innerHTML='';r.dataset.h='';return}const own=S.own[curI]>-2,G=genList(),on=G.includes(curI),manual=(S.gens||[]).length>0,sl=genSlots();
 let h='';if(own)h+=on?`<button data-a="off" class="on" title="Stop using this item">⚡ Generating${sl>1?' ('+(G.indexOf(curI)+1)+'/'+sl+')':''}</button>`:`<button data-a="on">⚡ Use as generator</button>`;if(manual)h+=`<button data-a="auto">Auto: rarest</button>`;
 const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;if(r.dataset.h!==h){r.dataset.h=h;r.innerHTML=h}}/* rebuild only on change: the HUD refreshes every 0.15 s and a rebuilt button swallows taps */
 {const _iu=infoUI;infoUI=function(i,m){_iu(i,m);if(i>=0)genRowUI()}}
@@ -2475,7 +2475,7 @@ t.classList.toggle('fast',fast);$('tcr').style.strokeDashoffset=(119.4*(1-(fast?
 const d=document.createElement('div');d.innerHTML=`<span style="color:${tc}">◆ ${m>=0?MODS[m].n+' ':''}${o.n}</span> <span style="color:var(--dim)">· ${TIERS[tierI(o)]}</span>`;const fe=$('feed');fe.insertBefore(d,fe.firstChild);while(fe.children.length>4)fe.lastChild.remove();
 const inf=$('info');if(inf){inf.style.setProperty('--tc',tc);inf.classList.remove('flash');void inf.offsetWidth;inf.classList.add('flash')}}catch(e){}return r}}
 /* sampling + animation loop (DOM-only; independent of the WebGL loop) */
-{let lt=performance.now(),sp=0,tl=0;const loop=now=>{const dt=Math.min(.5,(now-lt)/1000);lt=now;try{if(S&&!CS.on){S.rt=(S.rt||0)+dt;ringUI();sp+=dt;tl+=dt;
+{let lt=performance.now(),sp=0,tl=0;const loop=now=>{const dt=Math.min(.5,(now-lt)/1000);lt=now;try{if(S&&!CS.on&&!document.hidden){S.rt=(S.rt||0)+dt;ringUI();sp+=dt;tl+=dt;
 if(tl>.25){tl=0;curHUD();teleUI()}
 if(sp>=1){sp=0;for(let i=0;i<4;i++){const h=TEL.h[i];h.push(Math.log10(getW(i)+1));if(h.length>90)h.shift()}TEL.rl.push([now/1000,S.rolls]);{const bar=$('bar'),inf=$('info');if(bar&&inf&&bar.offsetHeight)inf.style.bottom=(bar.offsetHeight+4)+'px'}while(TEL.rl.length>30)TEL.rl.shift();sparkDraw()}}}catch(e){}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
 /* run timer: saved, reset on rebirth */
@@ -2494,8 +2494,11 @@ if(s){let ok=false;try{ok=imp(s,true)}catch(e){ok=false;try{console.error('save 
 if(ok){try{localStorage.setItem('csms_prev',s)}catch(e){}}
 else{SAVE_OK=false;S=fresh();ensureS();recalc();try{localStorage.setItem('csms_bak_'+Date.now(),s)}catch(e){}setTimeout(()=>toast('Your save could not be loaded. It is kept as a backup and autosave is paused. Import a save to continue.'),1500)}}
 try{const b1=best();show(b1<0?0:b1,b1<0?-1:S.own[b1]);setView('u');hudUI();curHUD(true)}catch(e){}}
-let last=performance.now(),t=0,hc=0,ot=0;const ctr=V3(0,0,0),tc=V3(0,0,0);
-(function f(now){requestAnimationFrame(f);if(gfxSkip(now))return;const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
+let last=performance.now(),t=0,hc=0,ot=0;
+/* ---------- the game only runs while it is open and visible: no offline progress, no catch-up after the tab was hidden ---------- */
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){last=performance.now();acc=0}try{if(document.hidden&&SAVE_OK)localStorage.setItem('csms',sv())}catch(e){}});
+const ctr=V3(0,0,0),tc=V3(0,0,0);
+(function f(now){requestAnimationFrame(f);if(document.hidden){last=now;return}if(gfxSkip(now))return;const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
 gainAll(dt);const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}{const pv=(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%';if(pv!==lastP){lastP=pv;$('roll').style.setProperty('--p',pv)}}
 hc+=dt;if(hc>.15){hc=0;QUIET=true;try{curHUD();autoUI();$('st').innerHTML=`Cooldown ${cd<.01?cd.toExponential(1):cd.toFixed(2)}s${hasAuto()?' · auto':''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmt(S.rolls)} rolls · ${cnt()}/${N}`;hudUI();if(view=='t'&&sel>=0)nodeUI()}finally{QUIET=false}}
 if(CS.on){csStep(dt)}else if(view=='u'){if(cur){if(!drag&&!cur.userData.noSpin)cur.rotation.y+=odt*.25;cur.userData.u&&cur.userData.u(ot);updFX(dt,odt);(cur.userData.bill||[]).forEach(b=>{b.quaternion.copy(cur.quaternion).invert().multiply(UC.quaternion)});}

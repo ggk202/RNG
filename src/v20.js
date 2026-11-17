@@ -33,7 +33,7 @@ S.gens=Array.isArray(d.gens)?d.gens.map(n=>by.get(n)).filter(i=>i!==undefined):[
 /* ---- UI: generator row under the item card, star in the HUD, tier suffix on names ---- */
 {const sb=$('sb');if(sb&&!$('genrow')){const d=document.createElement('div');d.id='genrow';d.style.cssText='margin-top:6px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap';sb.parentNode.insertBefore(d,sb.nextSibling);
 d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;if(a=='on')setGen(curI,true);else if(a=='off')setGen(curI,false);else if(a=='auto'){S.gens=[];hudUI();genRowUI()}})}}
-function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||OBJ[curI].pu=='rule'){r.innerHTML='';return}const own=S.own[curI]>-2,G=genList(),on=G.includes(curI),manual=(S.gens||[]).length>0,sl=genSlots();
+function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||OBJ[curI].pu=='rule'){r.innerHTML='';r.dataset.h='';return}const own=S.own[curI]>-2,G=genList(),on=G.includes(curI),manual=(S.gens||[]).length>0,sl=genSlots();
 let h='';if(own)h+=on?`<button data-a="off" class="on" title="Stop using this item">⚡ Generating${sl>1?' ('+(G.indexOf(curI)+1)+'/'+sl+')':''}</button>`:`<button data-a="on">⚡ Use as generator</button>`;if(manual)h+=`<button data-a="auto">Auto: rarest</button>`;
 const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;if(r.dataset.h!==h){r.dataset.h=h;r.innerHTML=h}}
 {const _iu=infoUI;infoUI=function(i,m){_iu(i,m);if(i>=0)genRowUI()}}

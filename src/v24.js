@@ -70,7 +70,7 @@ t.classList.toggle('fast',fast);$('tcr').style.strokeDashoffset=(119.4*(1-(fast?
 const d=document.createElement('div');d.innerHTML=`<span style="color:${tc}">◆ ${m>=0?MODS[m].n+' ':''}${o.n}</span> <span style="color:var(--dim)">· ${TIERS[tierI(o)]}</span>`;const fe=$('feed');fe.insertBefore(d,fe.firstChild);while(fe.children.length>4)fe.lastChild.remove();
 const inf=$('info');if(inf){inf.style.setProperty('--tc',tc);inf.classList.remove('flash');void inf.offsetWidth;inf.classList.add('flash')}}catch(e){}return r}}
 /* sampling + animation loop (DOM-only; independent of the WebGL loop) */
-{let lt=performance.now(),sp=0,tl=0;const loop=now=>{const dt=Math.min(.5,(now-lt)/1000);lt=now;try{if(S&&!CS.on){S.rt=(S.rt||0)+dt;ringUI();sp+=dt;tl+=dt;
+{let lt=performance.now(),sp=0,tl=0;const loop=now=>{const dt=Math.min(.5,(now-lt)/1000);lt=now;try{if(S&&!CS.on&&!document.hidden){S.rt=(S.rt||0)+dt;ringUI();sp+=dt;tl+=dt;
 if(tl>.25){tl=0;curHUD();teleUI()}
 if(sp>=1){sp=0;for(let i=0;i<4;i++){const h=TEL.h[i];h.push(Math.log10(getW(i)+1));if(h.length>90)h.shift()}TEL.rl.push([now/1000,S.rolls]);{const bar=$('bar'),inf=$('info');if(bar&&inf&&bar.offsetHeight)inf.style.bottom=(bar.offsetHeight+4)+'px'}while(TEL.rl.length>30)TEL.rl.shift();sparkDraw()}}}catch(e){}requestAnimationFrame(loop)};requestAnimationFrame(loop)}
 /* run timer: saved, reset on rebirth */
