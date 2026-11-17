@@ -28,6 +28,7 @@ select{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(
 @media (max-width:600px){#node{left:10px;right:10px;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);width:auto}}
 input,textarea{-webkit-user-select:text;user-select:text}
 #info{width:min(580px,94vw)}
+#info{z-index:3}#genrow,#genrow *{pointer-events:auto}
 #info #ib{display:flex;gap:8px;justify-content:center;align-items:center;font-size:11px;margin-bottom:2px}
 #info #ds{color:#c6d2f0;font-style:italic;margin:3px 0 5px}
 #info #md{margin-top:6px;padding-top:6px;border-top:1px solid var(--bd);font-size:12px}
@@ -2098,7 +2099,7 @@ S.gens=Array.isArray(d.gens)?d.gens.map(n=>by.get(n)).filter(i=>i!==undefined):[
 d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.a;if(a=='on')setGen(curI,true);else if(a=='off')setGen(curI,false);else if(a=='auto'){S.gens=[];hudUI();genRowUI()}})}}
 function genRowUI(){const r=$('genrow');if(!r)return;if(view!='u'||curI<0||!S||OBJ[curI].pu=='rule'){r.innerHTML='';return}const own=S.own[curI]>-2,G=genList(),on=G.includes(curI),manual=(S.gens||[]).length>0,sl=genSlots();
 let h='';if(own)h+=on?`<button data-a="off" class="on" title="Stop using this item">⚡ Generating${sl>1?' ('+(G.indexOf(curI)+1)+'/'+sl+')':''}</button>`:`<button data-a="on">⚡ Use as generator</button>`;if(manual)h+=`<button data-a="auto">Auto: rarest</button>`;
-const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;r.innerHTML=h}
+const t=ascTier(curI),rec=S.cxa?S.cxa[curI]:0;if(ASCN.has(OBJ[curI].n))h+=`<small style="align-self:center;color:#ffe9a0">${t?'Ascended '+'+'.repeat(t)+' · ×'+[1,3,9,27][t]+' yield':'Ascends with duplicates'}${rec>t?' · best '+'+'.repeat(rec):''}</small>`;if(r.dataset.h!==h){r.dataset.h=h;r.innerHTML=h}}/* rebuild only on change: the HUD refreshes every 0.15 s and a rebuilt button swallows taps */
 {const _iu=infoUI;infoUI=function(i,m){_iu(i,m);if(i>=0)genRowUI()}}
 {const _s=show;show=function(i,m){_s(i,m);if(i<0||!cur)return;const t=Math.max(ascTier(i),S&&S.cxa?S.cxa[i]:0);if(t>0&&!OBJ[i].pu){cur.add(puAura(OR[OBJ[i].c],t));$('nm').textContent+=' '+'+'.repeat(t)}if(OBJ[i].pu)cur.userData.fx=Object.assign({},cur.userData.fx||{},{bloom:1,tint:[1.08,1.03,.9],tintA:.3},OBJ[i].pu=='beyond'?{ex:-.3}:{});genRowUI()}}
 /* ---- shared Plus Ultra look: gold-white aura, rays, rising sparks ---- */
