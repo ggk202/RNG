@@ -54,7 +54,7 @@ input,textarea{-webkit-user-select:text;user-select:text}
 body.cs #hud,body.cs #bar,body.cs #info,body.cs #node,body.cs #tsum,body.cs #toast,body.cs .pn{display:none!important}
 #mgov{position:fixed;inset:0;z-index:30;background:rgba(2,3,10,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px}#mgc{touch-action:none}#mgov canvas{position:relative;inset:auto;display:block;flex:0 0 auto}#mgh{font-size:15px;text-align:center}#mgb{max-width:560px;text-align:center;color:var(--dim)}#mgb p{margin:6px 0}#rbbtn{background:linear-gradient(135deg,#ff7a3a,#a24bff);border:0;font-weight:700}
 </style></head><body>
-<div id="hud"><div class="card"><b id="coin">0</b> <small>stardust</small><br><small id="inc"></small><br><small id="rbh" style="color:#ffb070"></small></div><div class="card" style="text-align:right"><small id="st"></small></div></div>
+<div id="hud"><div class="card"><div id="coin"></div><small id="inc"></small><br><small id="rbh" style="color:#ffb070"></small></div><div class="card" style="text-align:right"><small id="st"></small></div></div>
 <div id="toast" class="card"></div>
 <div id="info" class="card"><div id="ib"><span id="tb" class="badge"></span><span id="cat"></span></div><h2 id="nm">—</h2><div id="ds"></div><div id="sb">Roll the cosmos</div><div id="md"></div></div>
 <div id="node" class="card"></div><div id="tsum" class="card"></div>
@@ -127,27 +127,38 @@ const OLDM=['Dense','Superdense','Entangled','Time-Shifted','Chromatic','Singula
 const mmul=m=>m<0?1:1+Math.pow(10,MODS[m].r*.15);
 const fmt=n=>n<1e3?(n<10?n.toFixed(2):n.toFixed(0)):n.toExponential(2).replace('e+','e');
 /* ---------- balance ---------- */
-const BAL={per:72,lx:.3,c0:2.3,e1:.72,e2:0,sp:1.18,lk:1.65,cu:1.4,ml:.7,autoCost:250};
+const BAL={per:120,lx:.3,c0:2.3,e1:.72,e2:0,sp:1.18,lk:1.65,cu:1.4,ml:.7,autoCost:250};
 /* ---------- skill tree data ---------- */
 const R=s=>{let a=s>>>0;return()=>{a+=0x6D2B79F5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}};
 const BR=[{n:'Chronal Speed',h:.52,w:['Cadence','Pulse','Flux','Surge','Tempo','Resonance']},{n:'Fortune',h:.12,w:['Serendipity','Fortune','Clover','Providence','Fate','Kismet']},{n:'Stellar Forge',h:.36,w:['Forge','Fusion','Dynamo','Harvest','Reactor','Siphon']},{n:'Anomaly',h:.86,w:['Anomaly','Aberration','Quirk','Mutation','Fracture','Paradox']}];
-const EF=(b,d)=>[BAL.sp,BAL.lk,BAL.cu,BAL.ml][b];
-const ETX=(b,d)=>['Roll cooldown ÷','Luck +10^','Stardust ×','Modifier luck +10^'][b]+EF(b,d).toFixed(2);
-const DIRS=[[1,.3,.1],[-.1,.35,1],[-1,-.25,0],[.05,-.4,-1]].map(a=>new THREE.Vector3(...a).normalize());
+/* ---------- v22 skill tree: four currencies, 120-node spiral arms, keystones, legendary spire ---------- */
+const CUR=[{n:'Chronons',s:'⧗',c:'#5ff3ff'},{n:'Aurum',s:'◆',c:'#ffd27a'},{n:'Stardust',s:'✦',c:'#8fe39a'},{n:'Anomalons',s:'✷',c:'#ff8bff'}];
+const TREE={L:120,base:60,perRb:10,c0:2.3,e:.43,lx:.18,mile:10,rs:1};
+const NB=[1.085,.8,1.17,.33];
+function brH(n){return n&&n.br>=0?BR[n.br].h:.13}
+const EF=(b,d)=>NB[b];
+const ETX=(b,d)=>['Roll cooldown ÷','Luck +10^','Yield ×','Modifier luck +10^'][b]+EF(b,d).toFixed(2);
+const LEGS=[['Celestial Alignment',{lk:2,ml:.8}],['Time Dilation',{sp:1.5}],['Cosmic Harvest',{cu:4}],['Fate Weaver',{lk:3}],['Unified Field',{sp:1.2,lk:1.2,cu:1.8,ml:.6}],['Prismatic Resonance',{ml:2}],['Eternal Return',{sp:1.6,cu:2}],['Probability Storm',{lk:4}],['Stellar Dominion',{cu:8}],['Chrono Singularity',{sp:2}],['Infinite Improbability',{lk:5,ml:1.5}],['The Grand Design',{sp:1.5,lk:3,cu:5,ml:1.5}]];
+const ARM=b=>b*Math.PI/2+.35,spine=(b,j)=>{const rho=2.6+j*.34,th=ARM(b)+j*.05*(b%2?1:-1);return new THREE.Vector3(Math.cos(th)*rho,4.2*Math.sin(j*.07+b*1.7)+(b%2?-1:1)*j*.11,Math.sin(th)*rho)};
+const DIRS=[0,1,2,3].map(b=>new THREE.Vector3(Math.cos(ARM(b)),.15,Math.sin(ARM(b))).normalize());
+const nodeCost=(b,j)=>Math.pow(10,TREE.c0+TREE.e*(j+b*.25)+TREE.lx*Math.max(0,j-TREE.base));
 const NODES=[{id:0,br:-1,d:0,par:-1,pos:new THREE.Vector3(),cost:0,name:'Singularity Core',g:1}];
-{const r=R(42);for(let b=0;b<4;b++){const bn=[];for(let j=0;j<BAL.per;j++){const par=bn.length?bn[bn.length-1-Math.floor(r()*Math.min(4,bn.length))]:NODES[0];const d=par.d+1;
-const pos=par.pos.clone().add(DIRS[b].clone().multiplyScalar(.9+r()*.6)).add(new THREE.Vector3(r()-.5,r()-.5,r()-.5).multiplyScalar(1.5));
-const n={id:NODES.length,br:b,d,par:par.id,pos,cost:Math.pow(10,BAL.c0+BAL.e1*(j+b*.25)+BAL.e2*Math.pow(j+b*.25,2)+BAL.lx*Math.max(0,j-35)),name:BR[b].w[j%6]+' '+d,g:0};NODES.push(n);bn.push(n)}}}
-{const rr=R(7),MD=2.1;NODES.forEach(n=>n.pos.multiplyScalar(1.8));for(let it=0;it<90;it++)for(let a=1;a<NODES.length;a++)for(let b=0;b<NODES.length;b++){if(a==b)continue;const A=NODES[a].pos,d=A.distanceTo(NODES[b].pos);if(d<MD){const v=A.clone().sub(NODES[b].pos);if(v.lengthSq()<1e-6)v.set(rr()-.5,rr()-.5,rr()-.5);A.add(v.normalize().multiplyScalar((MD-d)*.5))}}}
-
+{const r=R(42);for(let b=0;b<4;b++){const bn=[];for(let j=0;j<TREE.L;j++){const back=bn.length?Math.floor(r()*Math.min(3,bn.length)):0,par=bn.length?bn[bn.length-1-back]:NODES[0],d=par.d+1,mile=(j+1)%TREE.mile==0;
+const sp=spine(b,j),tg=spine(b,j+1).sub(sp).normalize(),side=new THREE.Vector3().crossVectors(tg,new THREE.Vector3(0,1,0)).normalize(),up=new THREE.Vector3().crossVectors(side,tg).normalize();
+const pos=sp.add(side.multiplyScalar((back?(j%2?1:-1)*(1.3+back*.7):0)+(r()-.5)*.8)).add(up.multiplyScalar(back?(r()-.5)*2.2:(r()-.5)*.6));
+const v=mile?(b==0||b==2?NB[b]*NB[b]:NB[b]*2):NB[b];
+const n={id:NODES.length,br:b,d,j,par:par.id,pos,cost:nodeCost(b,j),cur:b,v,mile,name:(mile?'Keystone: ':'')+BR[b].w[j%6]+' '+(j+1),g:0};NODES.push(n);bn.push(n)}}
+let prev=NODES[0];LEGS.forEach(([nm,fx],k)=>{const lv=(k+1)*TREE.mile,a=k*1.1,n={id:NODES.length,br:-2,leg:k+1,lv,d:lv,par:prev.id,pos:new THREE.Vector3(Math.cos(a)*3.4,5+k*4.4,Math.sin(a)*3.4),costs:[0,1,2,3].map(b=>2*nodeCost(b,lv-1)),cost:0,fx,name:'Legendary: '+nm,g:0};NODES.push(n);prev=n})}
+{const rr=R(7),MD=2.1;NODES.forEach(n=>n.pos.multiplyScalar(1.8));for(let it=0;it<36;it++)for(let a=1;a<NODES.length;a++)for(let b=0;b<NODES.length;b++){if(a==b)continue;const A=NODES[a].pos,d=A.distanceTo(NODES[b].pos);if(d<MD){const v=A.clone().sub(NODES[b].pos);if(v.lengthSq()<1e-6)v.set(rr()-.5,rr()-.5,rr()-.5);A.add(v.normalize().multiplyScalar((MD-d)*.5))}}}
+function applyNode(n,D){if(n.leg){const f=n.fx;if(f.sp)D.sp*=f.sp;if(f.lk)D.lk+=f.lk;if(f.cu)D.cu*=f.cu;if(f.ml)D.ml+=f.ml;return}if(n.br==0)D.sp*=n.v;else if(n.br==1)D.lk+=n.v;else if(n.br==2)D.cu*=n.v;else if(n.br==3)D.ml+=n.v}
 const hasAuto=()=>!!S.auto,cdn=()=>3/D.sp;
 /* ---------- game state ---------- */
 let S,D,acc=0,cdLeft=0;
 const fresh=()=>({coins:0,rolls:0,own:new Array(N).fill(-2),up:[],autoOn:true,ab:false,auto:false,cn:new Array(N).fill(0)});
-function recalc(){D={sp:1,lk:0,cu:1,ml:0};S.up.forEach(id=>{const n=NODES[id],f=EF(n.br,n.d);if(n.auto)return;if(n.br==0)D.sp*=f;else if(n.br==1)D.lk+=f;else if(n.br==2)D.cu*=f;else D.ml+=f})}
+function recalc(){D={sp:1,lk:0,cu:1,ml:0};S.up.forEach(id=>{const n=NODES[id];if(!n||n.auto)return;applyNode(n,D)})}
 const best=()=>{let b=-1;for(let i=0;i<N;i++)if(S.own[i]>-2&&(b<0||K[i]>=K[b]))b=i;return b};
 const cnt=()=>S.own.filter(x=>x>-2).length;
-const income=()=>{const G=genList();if(!G.length)return 0;let s=0;G.forEach(b=>s+=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b));return s*D.cu*(1+cnt()*.02)};
+const income=()=>rates()[2];
 const geo=()=>{let n=0;while(Math.random()<.1&&n<90)n++;return n-Math.log10(.1+.9*Math.random())};
 function pick(L){let lo=0,hi=N-1;while(lo<hi){const m=(lo+hi+1)>>1;if(K[m]<=L)lo=m;else hi=m-1}return lo}
 function roll1(){const i=biasPick(geo()+D.lk),M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!((MODS[j].rb||0)>S.rb)){m=j;break}S.rolls++;return[i,m]}
@@ -361,27 +372,29 @@ const g=new THREE.Group(),o=OBJ[i];try{G[KEYS[o.c]](o,R(i*7919+3),g)}catch(e){co
 $('nm').textContent=(m>=0?MODS[m].n+' ':'')+o.n;$('nm').style.color=rc(o);
 infoUI(i,m)}
 /* ---------- tree view ---------- */
-const nm=NODES.map(n=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.28,20,14),new THREE.MeshBasicMaterial({color:n.br<0?0xffffff:col(BR[n.br].h,.9,.6)}));m.position.copy(n.pos);m.userData.id=n.id;const gl=glow(n.br<0?0xffffff:col(BR[n.br].h,.9,.6),2.4);m.add(gl);TS.add(m);return m});
+const GEO_N=new THREE.SphereGeometry(.4,24,16),GEO_R=new THREE.SphereGeometry(.6,32,20);
+const nm=NODES.map(n=>{const m=new THREE.Mesh(GEO_N,new THREE.MeshBasicMaterial());m.position.copy(n.pos);m.userData.id=n.id;const gl=glow(n.br==-1?0xffffff:n.leg?0xffc860:col(brH(n),.9,.6),n.leg?4:n.mile?3:2.4);m.add(gl);TS.add(m);return m});
 /* ---------- constellation visuals ---------- */
 const RT_=DTX(128,r=>Math.exp(-Math.pow((r-.75)/.075,2))*1.15+Math.exp(-Math.pow((r-.75)/.2,2))*.3);
 const nodeMat=c=>sm(`uniform vec3 c;uniform float st;void main(){float f=1.-abs(dot(normalize(vN),normalize(vV)));float nz=fbm(vP*6.+t*.4);vec3 col=c*(.35+nz*1.1)*mix(.5,1.7,st)+vec3(1.)*pow(1.-f,4.)*st*.7+c*f*(.8+st);gl_FragColor=vec4(col,1.);}`,{c:{value:c},st:{value:0}});
 const dust=[],dS=NODES.map(()=>0);
-nm.forEach((m,i)=>{const n=NODES[i],c=n.br<0?new THREE.Color(1,.95,.8):col(BR[n.br].h,.9,.6);m.material=nodeMat(c);m.geometry=new THREE.SphereGeometry(n.br<0?.6:.4,32,20);
+nm.forEach((m,i)=>{const n=NODES[i],c=n.br==-1?new THREE.Color(1,.95,.8):n.leg?new THREE.Color(1,.78,.3):col(brH(n),.9,.6);m.material.dispose();m.material=nodeMat(c);m.geometry=n.br==-1||n.leg?GEO_R:GEO_N;if(n.mile)m.userData.big=1.3;if(n.leg)m.userData.big=1.5;
 const ring=new THREE.Sprite(new THREE.SpriteMaterial({map:RT_,color:c,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));ring.scale.set(2.2,2.2,1);ring.visible=false;m.add(ring);
-const r=R(i*31+7),P=[],C=[],S_=[];for(let j=0;j<30;j++){const p=V3(gs(r),gs(r),gs(r)).multiplyScalar(.9),k=c.clone().lerp(new THREE.Color(.6,.5,1),r()*.4);P.push(p.x,p.y,p.z);C.push(k.r*.03,k.g*.03,k.b*.03);S_.push(6+r()*8)}
-const d=pts(P,C,S_);d.position.copy(n.pos);d.scale.setScalar(.001);d.visible=false;TS.add(d);dust.push(d)});
-const EM=28,eP=[],eB=[],eS=[],eC=[];NODES.forEach(n=>{if(n.par<0)return;const a=NODES[n.par].pos,b=n.pos,c=col(BR[n.br].h,.9,.6);for(let j=0;j<EM;j++){eP.push(a.x,a.y,a.z);eB.push(b.x,b.y,b.z);eS.push(j/(EM-1),0,0);eC.push(c.r,c.g,c.b)}});
+const r=R(i*31+7),P=[],C=[],S_=[],sp_=n.br==-1||n.mile||n.leg;for(let j=0;j<(sp_?30:0);j++){const p=V3(gs(r),gs(r),gs(r)).multiplyScalar(.9),k=c.clone().lerp(new THREE.Color(.6,.5,1),r()*.4);P.push(p.x,p.y,p.z);C.push(k.r*.03,k.g*.03,k.b*.03);S_.push(6+r()*8)}
+const d=sp_?pts(P,C,S_):new THREE.Object3D();d.position.copy(n.pos);d.scale.setScalar(.001);d.visible=false;if(sp_)TS.add(d);dust.push(d)});
+const EM=28,eP=[],eB=[],eS=[],eC=[];NODES.forEach(n=>{if(n.par<0)return;const a=NODES[n.par].pos,b=n.pos,c=n.leg?new THREE.Color(1,.75,.3):col(brH(n),.9,.6);for(let j=0;j<EM;j++){eP.push(a.x,a.y,a.z);eB.push(b.x,b.y,b.z);eS.push(j/(EM-1),0,0);eC.push(c.r,c.g,c.b)}});
 const eg2=new THREE.BufferGeometry();eg2.setAttribute('position',new THREE.Float32BufferAttribute(eP,3));eg2.setAttribute('b',new THREE.Float32BufferAttribute(eB,3));eg2.setAttribute('st',new THREE.Float32BufferAttribute(eS,3));eg2.setAttribute('color',new THREE.Float32BufferAttribute(eC,3));
 const em=new THREE.Points(eg2,new THREE.ShaderMaterial({uniforms:{t:U.t},vertexShader:`attribute vec3 b,st,color;varying vec3 c;varying float al;uniform float t;void main(){float s=st.x,g=st.y,o=st.z;vec3 p=mix(position,b,s*g);float fl=.5+.5*sin(s*18.-t*(2.+o*2.));al=(s<=g+.001?1.:0.)*(.3+.7*o*fl)*smoothstep(0.,.1,g);c=color*(.6+o*1.4);vec4 mv=modelViewMatrix*vec4(p,1.);gl_PointSize=(.5+o*.7)*(100./-mv.z)*(.7+.3*fl);gl_Position=projectionMatrix*mv;}`,fragmentShader:`varying vec3 c;varying float al;void main(){float d=length(gl_PointCoord-.5)*2.;float a=exp(-d*d*3.)*step(d,1.)*al;gl_FragColor=vec4(c*a*1.2,a);}`,...ADD}));em.frustumCulled=false;TS.add(em);
 const rings=[0,1].map(k=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.8+k*.35,.012,8,96),new THREE.MeshBasicMaterial({color:0xffe9b0,...ADD}));TS.add(r);return r});
 const lab=(txt,c)=>{const cv=document.createElement('canvas');cv.width=512;cv.height=96;const x=cv.getContext('2d');x.font='600 44px system-ui,sans-serif';x.textAlign='center';x.fillStyle=c;x.shadowColor=c;x.shadowBlur=14;x.fillText(txt,256,62);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));s.scale.set(5,.94,1);return s};
-BR.forEach((b,i)=>{const s=lab(b.n.toUpperCase(),col(b.h,.9,.7).getStyle());s.position.copy(DIRS[i]).multiplyScalar(6.5).add(V3(0,2.6,0));TS.add(s)});
-function treeFX(t,dt){const sa=eg2.attributes.st.array;NODES.forEach((n,i)=>{const own=ownN(n),m=nm[i];m.material.uniforms.st.value=own?1:0;m.children[1].visible=own&&i>0;if(own)m.children[1].scale.setScalar(2+.2*Math.sin(t*2+i));
+BR.forEach((b,i)=>{const s=lab(b.n.toUpperCase(),col(b.h,.9,.7).getStyle());s.position.copy(DIRS[i]).multiplyScalar(13).add(V3(0,4,0));TS.add(s)});
+function treeFX(t,dt){const sa=eg2.attributes.st.array;NODES.forEach((n,i)=>{const own=ownN(n),m=nm[i];m.material.uniforms.st.value=own?1:0;m.children[1].visible=own&&i>0&&!!(n.mile||n.leg);if(own)m.children[1].scale.setScalar(2+.2*Math.sin(t*2+i));
 dS[i]+=((own?1:0)-dS[i])*Math.min(1,dt*1.5);dust[i].visible=dS[i]>.02;dust[i].scale.setScalar(Math.max(.001,dS[i]*n.g));
 if(n.par>=0){const b=(i-1)*EM*3;n.o=(n.o||0)+((own?1:0)-(n.o||0))*Math.min(1,dt*4);for(let j=0;j<EM;j++){sa[b+j*3+1]=n.g;sa[b+j*3+2]=n.o}}});eg2.attributes.st.needsUpdate=true;rings[0].rotation.set(t*.4,t*.3,0);rings[1].rotation.set(1.2,t*.25,t*.2)}
 const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(NODES.length*6),3));eg.setAttribute('color',new THREE.BufferAttribute(new Float32Array(NODES.length*6),3));
 const el=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({vertexColors:true,...ADD}));el.frustumCulled=false;TS.add(el);
-const ownN=n=>n.id==0||S.up.includes(n.id),availN=n=>!ownN(n)&&ownN(NODES[n.par])&&!nodeLocked(n);
+let _usA=null,_usL=-1,_usS=new Set();function upSet(){if(S.up!==_usA||S.up.length!==_usL){_usA=S.up;_usL=S.up.length;_usS=new Set(S.up)}return _usS}
+const ownN=n=>n.id==0||upSet().has(n.id),availN=n=>!ownN(n)&&ownN(NODES[n.par])&&!nodeLocked(n);
 let sel=-1;
 function nodeUI(){const p=$('node');if(view!='t'||sel<0){p.style.display='none';return}const n=NODES[sel];p.style.display='block';
 const own=ownN(n),av=availN(n);p.innerHTML=`<b style="color:${n.br<0?'#fff':`hsl(${BR[n.br].h*360},90%,70%)`}">${n.name}</b><br><small>${n.br<0?'The origin of all branches':BR[n.br].n}</small><br>${n.br<0?'':n.auto?'Unlocks auto-roll (uses the roll cooldown)':ETX(n.br,n.d)}<br>`+(own?'<small>Unlocked</small>':`Cost: ${fmt(n.cost)}<br><button id="buy" ${av&&S.coins>=n.cost?'':'disabled'}>${av?'Unlock':'Locked'}</button>`);
@@ -392,11 +405,11 @@ function setCam(c,s,ctr){c.position.set(ctr.x+s.d*Math.sin(s.ph)*Math.sin(s.th),
 const cvs=rd.domElement;
 cvs.addEventListener('pointerdown',e=>{ptr.set(e.pointerId,[e.clientX,e.clientY]);moved=0;drag=true;tap0=[e.clientX,e.clientY,performance.now()];if(ptr.size==2){tap0=null;const[a,b]=[...ptr.values()];pd=Math.hypot(a[0]-b[0],a[1]-b[1])}});
 cvs.addEventListener('pointermove',e=>{if(!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId),s=VW[view];
-if(ptr.size==2){ptr.set(e.pointerId,[e.clientX,e.clientY]);const[a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pd)s.d=Math.min(170,Math.max(3,s.d*pd/d));pd=d;moved=99;return}
+if(ptr.size==2){ptr.set(e.pointerId,[e.clientX,e.clientY]);const[a,b]=[...ptr.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]);if(pd)s.d=Math.min(320,Math.max(3,s.d*pd/d));pd=d;moved=99;return}
 const dx=e.clientX-o[0],dy=e.clientY-o[1];moved+=Math.abs(dx)+Math.abs(dy);s.th-=dx*.006;s.ph=Math.min(3,Math.max(.15,s.ph-dy*.006));ptr.set(e.pointerId,[e.clientX,e.clientY])});
 const up=e=>{if(ptr.has(e.pointerId)&&ptr.size==1&&tap0&&Math.hypot(e.clientX-tap0[0],e.clientY-tap0[1])<(TOUCH?18:8)&&performance.now()-tap0[2]<700&&view=='t'&&e.type=='pointerup')pickNode(e);ptr.delete(e.pointerId);drag=ptr.size>0;pd=0};
 cvs.addEventListener('pointerup',up);cvs.addEventListener('pointercancel',up);
-cvs.addEventListener('wheel',e=>{e.preventDefault();const s=VW[view];s.d=Math.min(170,Math.max(3,s.d*(1+e.deltaY*.001)))},{passive:false});
+cvs.addEventListener('wheel',e=>{e.preventDefault();const s=VW[view];s.d=Math.min(320,Math.max(3,s.d*(1+e.deltaY*.001)))},{passive:false});
 const rc_=new THREE.Raycaster(),mv=new THREE.Vector2();
 function pickNode(e){mv.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);rc_.setFromCamera(mv,TC);const h=rc_.intersectObjects(nm.filter(m=>m.visible));sel=h.length?h[0].object.userData.id:-1;nodeUI()}
 function setView(v){view=v;$('b_u').classList.toggle('on',v=='u');$('b_t').classList.toggle('on',v=='t');$('roll').style.display=v=='u'?'':'none';$('pv').style.display=$('nx').style.display=$('dmod').style.display=$('dcs').style.display=(v=='u'&&DBG)?'':'none';$('info').style.display=v=='u'?'':'none';nodeUI()}
@@ -558,9 +571,9 @@ function infoUI(i,m){if(i<0)return;const o=OBJ[i],ti=tierI(o),tc=TCOL[ti],own=S.
 $('tb').textContent=TIERS[ti];$('tb').style.color=tc;$('nm').style.color=tc;
 $('cat').textContent=CATN[o.c]+' · #'+(i+1)+' of '+N;$('ds').textContent=o.d||'';
 $('sb').innerHTML=`${oddsT(o.k)} · base yield ${fmt(Math.pow(10,.25*K[i]))}/s · rolled ${fmtI(rc_n)}×`+(own?'':' · <span style="color:#ff9a9a">not owned</span>')+(genList().includes(i)?' · <span style="color:#ffe9a8">'+((S.gens||[]).length?'⚡':'★')+' generating</span>':'');
-const md=$('md');if(m>=0){const M=MODS[m];md.style.display='';md.innerHTML=`<b style="color:${M.c}">${M.n}</b> <span>· modifier 1 in 10^${M.r} · yield ×${fmt(mmul(m))}</span><br><span style="color:#c6d2f0">${M.d}</span>`}else md.style.display='none'}
+const md=$('md');if(m>=0){const M=MODS[m];md.style.display='';md.innerHTML=`<b style="color:${M.c}">${M.n}</b> <span>· modifier 1 in 10^${M.r} · yield ×${fmt(mmul(m))}</span><br>${profTxt(m)}<br><span style="color:#c6d2f0">${M.d}</span>`}else md.style.display='none'}
 function hudUI(){const GL=genList(),b=GL.length?GL[0]:-1,cd=cdn(),pn=pNew(),mc=Math.min(1,Math.pow(10,-(MODS[0].r-D.ml)));
-$('inc').innerHTML='+'+fmt(income())+'/s'+(b>=0?`<br><span style="color:${TCOL[tierI(OBJ[b])]}">${(S.gens||[]).length?'⚡':'★'} ${S.own[b]>=0?MODS[S.own[b]].n+' ':''}${ascName(OBJ[b].n,ascTier(b))}</span>${GL.length>1?' <small style="color:#9fb0d8">+'+(GL.length-1)+' more</small>':''}`:'<br>Roll to make your first discovery');
+$('inc').innerHTML=(b>=0?`<span style="color:${TCOL[tierI(OBJ[b])]}">${(S.gens||[]).length?'⚡':'★'} ${S.own[b]>=0?MODS[S.own[b]].n+' ':''}${ascName(OBJ[b].n,ascTier(b))}</span>${GL.length>1?' <small style="color:#9fb0d8">+'+(GL.length-1)+' more</small>':''}`:'Roll to make your first discovery');
 $('st').innerHTML=`Cooldown <b>${fCD(cd)}</b>${hasAuto()?(S.autoOn?' · auto on':' · auto off'):''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmtI(S.rolls)} rolls · <b>${cnt()}</b>/${avail()} found<br>New find ${pn>0?probT(pn)+' · ~'+fT(cd/pn):'— all found'}<br>Modifier ${probT(mc)}`;
 $('tsum').style.display=view=='t'?'block':'none';if(view=='t')treeSum();else if(curI>=0)infoUI(curI,curM)}
 function treeSum(){const val=[`cooldown ${fCD(cdn())}`,`luck ×10^${D.lk.toFixed(1)}`,`stardust ×${fmt(D.cu)}`,`mod luck ×10^${D.ml.toFixed(1)}`],aff=NODES.filter(n=>availN(n)&&S.coins>=n.cost).length;
@@ -1060,7 +1073,7 @@ for(let i=0;i<120;i++){const d=V3(gs(r),gs(r),gs(r)).normalize();if(d.y<Math.cos
 const bh=new THREE.Mesh(new THREE.SphereGeometry(.16,32,24),new THREE.MeshBasicMaterial({color:0x000000}));g.add(bh);const dk=new THREE.Mesh(new THREE.RingGeometry(.2,.55,64),sm(`void main(){float rr=length(vP.xy),a=atan(vP.y,vP.x);float n2=fbm(vec3(cos(a-t*2.)*rr*6.,sin(a-t*2.)*rr*6.,rr*8.));float I=pow(1.-(rr-.2)/.35,2.)*(.4+n2);gl_FragColor=vec4(vec3(1.,.6,.9)*I*2.,1.);}`,{},ADD));dk.rotation.x=-1.3;g.add(dk,glow(0xd89aff,1.5));g.userData.noSpin=0};
 {const _x=G.xtal;G.xtal=(o,r,g)=>MIN2[o.n]?MIN2[o.n](o,r,g):_x(o,r,g)}
 /* ---------- forward-compatible saves (CSMS4: everything keyed by stable names) ---------- */
-const ALIAS={'Pillars Nebula':'Pillars of Creation'};NODES.forEach(n=>{if(n.id>0)n.key=n.br+':'+((n.id-1)%BAL.per)});
+const ALIAS={'Pillars Nebula':'Pillars of Creation'};NODES.forEach(n=>{if(n.id>0)n.key=n.leg?'L:'+n.leg:n.br+':'+n.j});
 function svEncode(){const own=[],cn={};OBJ.forEach(o=>{const v=S.own[o.i];if(v>-2)own.push(v>=0?[o.n,MODS[v].n]:[o.n]);if(S.cn[o.i])cn[o.n]=S.cn[o.i]});
 const d={v:4,c:S.coins,r:S.rolls,a:S.autoOn?1:0,b:S.ab?1:0,au:S.auto?1:0,own,cn,up:S.up.map(id=>NODES[id]&&NODES[id].key).filter(Boolean),s:Date.now()};return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}
 function imp(str,quiet){str=String(str||'').trim();const ver=str.match(/^CSMS(\d+):/);if(!ver)return false;if(+ver[1]<4)return impLegacy(str,quiet);
@@ -1068,7 +1081,7 @@ try{const d=JSON.parse(decodeURIComponent(escape(atob(str.slice(ver[0].length)))
 const own=new Array(N).fill(-2),cn=new Array(N).fill(0);(Array.isArray(d.own)?d.own:[]).forEach(e=>{if(!Array.isArray(e))return;const i=nm(e[0]);if(i===undefined)return;const m=e[1]!==undefined&&modBy.has(e[1])?modBy.get(e[1]):-1;own[i]=Math.max(own[i],m)});
 if(d.cn&&typeof d.cn=='object')for(const k in d.cn){const i=nm(k),v=+d.cn[k];if(i!==undefined&&isFinite(v)&&v>=0)cn[i]=v}
 const keyId=new Map(NODES.filter(n=>n.key).map(n=>[n.key,n.id])),ups=(Array.isArray(d.up)?d.up:[]).map(k=>keyId.get(k)).filter(x=>x!==undefined),coins=+d.c;
-S={coins:isFinite(coins)&&coins>=0?coins:0,rolls:isFinite(+d.r)?+d.r:0,own,cn,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4})};recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,Math.max(0,(Date.now()-d.s)/1000));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
+S={coins:isFinite(coins)&&coins>=0?coins:0,rolls:isFinite(+d.r)?+d.r:0,own,cn,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4})};recalc();if(quiet&&d.s)gainAll(Math.min(3600,Math.max(0,(Date.now()-d.s)/1000)));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 /* ---------- v12: formation cutscenes ---------- */
 const CSS=new THREE.Scene();CSS.add(new THREE.AmbientLight(0x404060,.9));{const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(3,2,4);CSS.add(d)}const csSky=deepSky();CSS.add(csSky);
 const CS={on:false,t:0,tb:0,q:[],sc:null,st:null,grp:null,o:null,fx:{},imp:0,inv:0,red:0},CSU={t:{value:0}};
@@ -1173,7 +1186,7 @@ const LEND=[],LFIN=[];OBJ.forEach(o=>{if(o.pu)return;LEND[o.layer]=o.i;LFIN[o.la
 const CONSTS={bal:{n:'Balanced',d:'Our own universe’s constants.'},grav:{n:'Strong Gravity',d:'+1 luck; favours black holes, remnants, wormholes and megastructures; cooldown ×1.2',lk:1,sp:1/1.2,fav:['bh','remn','wh','mega']},fast:{n:'Fast Time',d:'Cooldown ÷1.6; −1 luck',sp:1.6,lk:-1},chem:{n:'Rich Chemistry',d:'+2 modifier luck; ×0.7 stardust; favours molecules, minerals and life',ml:2,cu:.7,fav:['mol','xtal','micro','flora','fauna']}};
 const SHOPV={luck:.4,time:1.08,dust:1.6,mod:.4,head:1};
 const SHOP=[{k:'luck',n:'Primordial Luck',d:'+0.4 luck',max:12,c0:8,g:1.45},{k:'time',n:'Quickened Time',d:'Cooldown ÷1.08',max:10,c0:8,g:1.45},{k:'dust',n:'Stardust Memory',d:'Stardust ×1.6',max:12,c0:6,g:1.4},{k:'mod',n:'Resonant Modifiers',d:'+0.4 modifier luck',max:10,c0:10,g:1.5},
-{k:'auto',n:'Inherited Automation',d:'Start every run with auto-roll unlocked',max:1,c0:15,g:1},{k:'head',n:'Head Start',d:'Start each run with 10^level stardust',max:6,c0:6,g:1.6},{k:'echo',n:'Echo Attunement',d:'Echo chance ×1.5',max:6,c0:12,g:1.5}];
+{k:'auto',n:'Inherited Automation',d:'Start every run with auto-roll unlocked',max:1,c0:15,g:1},{k:'head',n:'Head Start',d:'Start each run with 10^level of every currency',max:6,c0:6,g:1.6},{k:'echo',n:'Echo Attunement',d:'Echo chance ×1.5',max:6,c0:12,g:1.5}];
 const shopCost=(u,l)=>Math.ceil(u.c0*Math.pow(u.g,l));
 function ensureS(){if(!S)return;const fresh=!S.cx;if(!S.cx)S.cx=new Array(N).fill(0);if(!S.cxe)S.cxe=new Array(N).fill(0);if(!S.ec)S.ec=new Array(N).fill(0);S.rb=S.rb||0;S.rc=S.rc||0;S.shop=S.shop||{};S.mg=S.mg||{};S.mgc=S.mgc||{};S.cst=S.cst||'bal';S.life=S.life||{runs:0,rolls:0};
 if(fresh)S.own.forEach((v,i)=>{if(v>-2)S.cx[i]|=1<<(v+1)})}
@@ -1311,7 +1324,7 @@ const cover=()=>{let e=0;for(let b=0;b<BINS;b++){const a=(b+.5)/BINS*6.2832;for(
 const intro=()=>{st='intro';head();ui(`<p>Tap a ring sector to place a collector panel. Panels block light for everything behind them, so the <b>inner ring</b> (100% efficient) matters most, but its panels burn out after 7s. The middle ring is 75% efficient and lasts 14s; the outer ring is 50% and permanent. Solar flares (red wedge) destroy inner and middle panels in their path.</p><p>Keep average captured energy above <b>${tgt}%</b> for 40 seconds${S.mg[1]?' (already passed: replays pay stardust on a cooldown)':' to unlock the <b>Cosmogenesis Engine</b>'}.</p><button id="mgs">Start</button> <button id="mgx">Close</button>`);$('mgs').onclick=start;$('mgx').onclick=close};
 const start=()=>{st='play';t=0;acc=0;sup=3;fl=null;nextFl=4;RINGS.forEach(r=>{r.a=Math.random()*6;r.p.fill(0)});ui('<button id="mgx">Quit</button>');$('mgx').onclick=intro};
 const finish=()=>{st='end';const sc=acc/T*100,pass=sc>=tgt;let msg='';if(pass&&!S.mg[1]){S.mg[1]=true;msg='<p style="color:#8fe39a">Passed! The Cosmogenesis Engine can now be rolled.</p>'}else if(pass)msg='<p style="color:#8fe39a">Passed.</p>';else msg=`<p style="color:#ff9a9a">${tgt}% needed. Try again.</p>`;
-const now=Date.now();let rw='';if((S.mgc[1]||0)+600e3<now){const g2=income()*60*Math.max(.2,sc/100);S.coins+=g2;S.mgc[1]=now;rw=`<p>Reward: +${fmt(g2)} stardust</p>`}else rw=`<p><small>Reward on cooldown for ${Math.ceil(((S.mgc[1]+600e3)-now)/60e3)} min</small></p>`;
+const now=Date.now();let rw='';if((S.mgc[1]||0)+600e3<now){const g2=60*Math.max(.2,sc/100);gainAll(g2);S.mgc[1]=now;rw=`<p>Reward: ${fT(g2)} of production in all four currencies</p>`}else rw=`<p><small>Reward on cooldown for ${Math.ceil(((S.mgc[1]+600e3)-now)/60e3)} min</small></p>`;
 head();ui(`<p>Average energy: <b>${sc.toFixed(1)}%</b></p>${msg}${rw}<button id="mgs">Play again</button> <button id="mgx">Close</button>`);$('mgs').onclick=start;$('mgx').onclick=close};
 const close=()=>{MG.on=false;cancelAnimationFrame(raf);ov.remove()};
 cv.addEventListener('pointerdown',e=>{if(st!='play')return;const b=cv.getBoundingClientRect(),x=(e.clientX-b.left)/b.width*2-1,y=(e.clientY-b.top)/b.height*2-1,rr=Math.hypot(x,y),a=Math.atan2(y,x);let best=null,bd=.09;RINGS.forEach(r=>{const d=Math.abs(rr-r.R);if(d<bd){bd=d;best=r}});if(!best||sup<1)return;const k=secAt(best,a);if(best.p[k]<=0){best.p[k]=best.life;sup-=1}});
@@ -1328,7 +1341,7 @@ const canRebirth=()=>S.own[LFIN[Math.min(S.rb,MAXRB)]]>-2;
 function hideP(){['cxp','svp','rbp','shp','gfxp'].forEach(id=>{const e=$(id);if(e)e.style.display='none'})}
 function openRebirth(){hideP();const p=$('rbp');p.style.display='block';const nx=S.rb+1;if(nx>MAXRB){p.innerHTML=`<b>Beyond ${LNAME[S.rb]}</b><p>You've reached the edge of what exists so far: Layer ${ROMAN(nx)} (${LNAME[nx]}) is still being built.</p><button id="rbc">Close</button>`;$('rbc').onclick=hideP;return}
 let sel=S.cst||'bal';const draw=()=>{p.innerHTML=`<b>Rebirth ${ROMAN(nx)}: ${LNAME[nx]}</b><p>Collapse this universe into a new one. You gain <b>${rbGain()} aether</b> (30×${nx} for the layer, +1 per 4 discoveries, +3 per Echo).</p>
-<p><b>Kept:</b> codex (every model and every modifier ever seen), aether, shop upgrades, minigame progress.<br><b>Reset:</b> stardust, skill tree, collection, rolls, auto-roll${S.shop.auto?' (restored by Inherited Automation)':''}.</p>
+<p><b>Kept:</b> codex (every model and every modifier ever seen), aether, shop upgrades, minigame progress.<br><b>Reset:</b> all four currencies, skill tree, collection, rolls, auto-roll${S.shop.auto?' (restored by Inherited Automation)':''}.</p>
 <p><b>New:</b> Layer ${ROMAN(nx)} items up to 1 in 10^${LCAP[nx]}, Echo variants of earlier items, ${LNEW[nx]||''}.</p><p><b>Physical constants for the next universe:</b></p><div id="rbk">${Object.entries(CONSTS).map(([k,c])=>`<button data-k="${k}" class="${k==sel?'on':''}" style="display:block;width:100%;text-align:left;margin:4px 0">${c.n}<br><small>${c.d}</small></button>`).join('')}</div>
 <p><button id="rbgo" style="background:linear-gradient(135deg,#ff7a3a,#a24bff);border:0;font-weight:700">Rebirth</button> <button id="rbc">Cancel</button></p>`;
 $('rbk').onclick=e=>{const b=e.target.closest('button');if(b){sel=b.dataset.k;draw()}};$('rbc').onclick=hideP;$('rbgo').onclick=()=>{hideP();doRebirth(sel)}};draw()}
@@ -1367,7 +1380,7 @@ if(d.cx&&typeof d.cx=='object')for(const k in d.cx){const i=nm(k);if(i===undefin
 const keyId=new Map(NODES.filter(n=>n.key).map(n=>[n.key,n.id])),ups=(Array.isArray(d.up)?d.up:[]).map(k=>keyId.get(k)).filter(x=>x!==undefined),shop={};if(d.shop&&typeof d.shop=='object')SHOP.forEach(u=>{const l=Math.floor(num(d.shop[u.k],0));if(l)shop[u.k]=Math.min(l,u.max)});
 const mg={},mgc={};if(d.mg&&typeof d.mg=='object')for(const k in d.mg)if(d.mg[k])mg[k]=true;if(d.mgc&&typeof d.mgc=='object')for(const k in d.mgc)mgc[k]=num(d.mgc[k],0);
 S={coins:num(d.c,0),rolls:num(d.r,0),own,cn,cx,cxe,ec,autoOn:d.a!==0,ab:d.b===1,auto:d.au===1,up:fixUps({u:ups,v:4}),rb:Math.min(Math.floor(num(d.rb,0)),6),rc:Math.floor(num(d.rc,0)),shop,cst:CONSTS[d.cst]?d.cst:'bal',mg,mgc,life:d.life&&typeof d.life=='object'?{runs:num(d.life.runs,0),rolls:num(d.life.rolls,0)}:{runs:0,rolls:0}};
-recalc();if(quiet&&d.s)S.coins+=income()*Math.min(3600,Math.max(0,(Date.now()-d.s)/1000));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
+recalc();if(quiet&&d.s)gainAll(Math.min(3600,Math.max(0,(Date.now()-d.s)/1000)));NODES.forEach(n=>n.g=0);return true}catch(e){return false}}
 /* ---------- debug shortcuts (they change the real save) ---------- */
 function askTwice(b,fn){if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl;fn();return}b.dataset.lbl=b.textContent;b.dataset.armed=1;b.textContent='Tap again to confirm';setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent=b.dataset.lbl}},4000)}
 
@@ -2105,7 +2118,7 @@ const head=()=>{$('mgh').innerHTML=st=='play'?`<b>Last Light</b> · ${Math.ceil(
 const intro=()=>{st='intro';head();ui(`<p>The last stars are dying. Tap a <b>star</b> to pour 10 energy into it (+45% fuel). When a star flashes red, proton decay is about to strip its fuel: tap it in time to shield it for 6 energy.</p><p>The two <b>black holes</b> in the middle are your reserve: tap one to extract 10 energy from its mass (Penrose process). When a black hole evaporates completely it releases a final burst of +30 energy.</p><p>Energy trickles in more and more slowly. Keep the average share of shining bodies above <b>${tgt}%</b> for ${T} seconds${S.mg[2]?' (already passed: replays pay stardust on a cooldown)':' to unlock <b>The Final Fluctuation</b>'}.</p><button id="mgs">Start</button> <button id="mgx">Close</button>`);$('mgs').onclick=start;$('mgx').onclick=close};
 const start=()=>{st='play';t=0;acc=0;E=40;warn=null;nextW=5;fx=[];mk();ui('<button id="mgx">Quit</button>');$('mgx').onclick=intro};
 const finish=()=>{st='end';const sc=acc/T*100,pass=sc>=tgt;let msg='';if(pass&&!S.mg[2]){S.mg[2]=true;msg='<p style="color:#8fe39a">Passed! The Final Fluctuation can now be rolled.</p>'}else if(pass)msg='<p style="color:#8fe39a">Passed.</p>';else msg=`<p style="color:#ff9a9a">${tgt}% needed. Try again.</p>`;
-const now=Date.now();let rw='';if((S.mgc[2]||0)+600e3<now){const g2=income()*60*Math.max(.2,sc/100);S.coins+=g2;S.mgc[2]=now;rw=`<p>Reward: +${fmt(g2)} stardust</p>`}else rw=`<p><small>Reward on cooldown for ${Math.ceil(((S.mgc[2]+600e3)-now)/60e3)} min</small></p>`;
+const now=Date.now();let rw='';if((S.mgc[2]||0)+600e3<now){const g2=60*Math.max(.2,sc/100);gainAll(g2);S.mgc[2]=now;rw=`<p>Reward: ${fT(g2)} of production in all four currencies</p>`}else rw=`<p><small>Reward on cooldown for ${Math.ceil(((S.mgc[2]+600e3)-now)/60e3)} min</small></p>`;
 head();ui(`<p>Light kept: <b>${sc.toFixed(1)}%</b></p>${msg}${rw}<button id="mgs">Play again</button> <button id="mgx">Close</button>`);$('mgs').onclick=start;$('mgx').onclick=close};
 const close=()=>{MG.on=false;cancelAnimationFrame(raf);ov.remove()};
 cv.addEventListener('pointerdown',e=>{if(st!='play')return;const bb=cv.getBoundingClientRect(),x=(e.clientX-bb.left)/bb.width*2-1,y=(e.clientY-bb.top)/bb.height*2-1;let best=null,bd=.16;B.forEach(b=>{const d=Math.hypot(b.x-x,b.y-y);if(d<bd){bd=d;best=b}});if(!best||best.f<=0)return;
@@ -2264,15 +2277,135 @@ update(st,t,g,o){st.core.scale.setScalar(Math.max(.05,t<1.2?ezIn(sg(t,0,1.2))*8:
 return{pos:t<1.2?[0,.2,6-1.5*ezIn(sg(t,0,1.2))]:orbit(t,1.2,6+2*ezOut(sg(t,1.2,6.6)),.5,.1),look:[0,0,0],roll:0,shake:ramp(t,.2,1.2,.3)+shk(t,[[1.2,1.1,2.2]]),hit:hits(t,[[.75,.1,2],[1,.12,2],[1.2,.3,2]]),fx:{full:1,bloom:t>1&&t<3?3:1.9,tint:[1.15,1.03,.82],tintA:.5,ca:t>.9&&t<2.2?1.8:.3},
 cap:capAt(t,[[.1,1.15,'PLUS ULTRA',''],[2,6.6,o.n,o.sub||(o.pu=='rule'?'Plus Ultra · rule breaker':'Plus Ultra · beyond the cap')]])}}};
 
+/* ---------- v22: four currencies, specialised modifiers, a long spiral skill tree with a legendary spire ---------- */
+/* Currencies: 0 Chronons (Chronal Speed), 1 Aurum (Fortune), 2 Stardust (Stellar Forge, kept in S.coins), 3 Anomalons (Anomaly). */
+function modTier(m){return m<0?0:m<10?1:m<18?2:m<24?3:4}
+const PROF_F=[1,2.4,1.8,1.45,1.3],PROF_O=.12;
+function mprof(m){const k=modTier(m);if(!k)return[1,1,1,1];const a=[PROF_O,PROF_O,PROF_O,PROF_O];for(let i=0;i<k;i++)a[(m+i)%4]=PROF_F[k];return a}
+function profTxt(m){const p=mprof(m),y=mmul(m);return'<span style="font-size:12px">'+p.map((v,i)=>`<span style="color:${v>.5?CUR[i].c:'#5a6480'}">${CUR[i].s}&#8202;×${fmt(v*y)}</span>`).join(' &nbsp;')+'</span>'}
+function rates(){const r=[0,0,0,0];if(!S||!D)return r;const G=genList();G.forEach(b=>{const base=Math.pow(10,.25*K[b])*mmul(S.own[b])*ascMul(b),p=mprof(S.own[b]);for(let i=0;i<4;i++)r[i]+=base*p[i]});const f=D.cu*(1+cnt()*.02)*TREE.rs;for(let i=0;i<4;i++)r[i]=isFinite(r[i]*f)?r[i]*f:0;return r}
+function getW(i){return i==2?S.coins:(S.w&&S.w[i])||0}
+function addW(i,v){if(!isFinite(v))return;if(i==2){S.coins=Math.max(0,S.coins+v);return}if(!Array.isArray(S.w)||S.w.length!=4)S.w=[0,0,0,0];S.w[i]=Math.max(0,(+S.w[i]||0)+v)}
+function gainAll(sec){const r=rates();if(sec>0)for(let i=0;i<4;i++)addW(i,r[i]*sec);return r}
+{const _e=ensureS;ensureS=function(){_e();if(!S)return;if(!Array.isArray(S.w)||S.w.length!=4)S.w=[0,0,0,0];S.w=S.w.map(v=>isFinite(+v)&&+v>=0?+v:0)}}
+/* ---- availability, legendary reveal ---- */
+function availLen(){return TREE.base+TREE.perRb*Math.min(S&&S.rb||0,6)}
+let _boS=null,_bo=[0,0,0,0];
+function brOwned(){if(!S)return _bo;const u=upSet();if(u===_boS)return _bo;_boS=u;_bo=[0,0,0,0];u.forEach(id=>{const n=NODES[id];if(n&&n.br>=0)_bo[n.br]++});return _bo}
+function legReady(k){const lv=k*TREE.mile;return lv<=availLen()&&brOwned().every(c=>c>=lv)}
+function nodeLocked(n){if(!n||n.id==0)return false;if(n.leg)return!ownN(n)&&!legReady(n.leg);return n.j>=availLen()}
+function canAfford(n){return n.leg?n.costs.every((c,i)=>getW(i)>=c):getW(n.cur)>=n.cost}
+function payNode(n){if(n.leg)n.costs.forEach((c,i)=>addW(i,-c));else addW(n.cur,-n.cost)}
+function cheapN(){let b=null;NODES.forEach(n=>{if(availN(n)&&!n.leg&&(!b||n.cost<b.cost))b=n});return b}
+const curSpan=(i,v)=>`<span style="color:${CUR[i].c}">${CUR[i].s}&#8202;${fmt(v)}</span>`;
+function effTxt(n){if(n.leg){const f=n.fx,L=[];if(f.sp)L.push('Roll cooldown ÷'+f.sp);if(f.lk)L.push('Luck +10^'+f.lk);if(f.cu)L.push('Yield ×'+f.cu);if(f.ml)L.push('Modifier luck +10^'+f.ml);return L.join(' · ')}
+return['Roll cooldown ÷','Luck +10^','Yield ×','Modifier luck +10^'][n.br]+(n.br==0||n.br==2?n.v.toFixed(3):n.v.toFixed(2))}
+function nodeDelta(n){if(!n||n.br==-1)return'';const E=Object.assign({},D);applyNode(n,E);const L=[],cd=cdn();
+if(E.sp!==D.sp)L.push(`Cooldown ${fCD(cd)} → ${fCD(cd*D.sp/E.sp)}`);if(E.lk!==D.lk)L.push(`Luck ×10^${D.lk.toFixed(2)} → ×10^${E.lk.toFixed(2)}`);
+if(E.cu!==D.cu){const r=rates();L.push(`Yield ×${fmt(D.cu)} → ×${fmt(E.cu)} (all four currencies)`)}if(E.ml!==D.ml)L.push(`Mod luck ×10^${D.ml.toFixed(2)} → ×10^${E.ml.toFixed(2)}`);return L.join('<br>')}
+function costTxt(n){const r=rates(),cs=n.leg?n.costs.map((c,i)=>[i,c]):[[n.cur,n.cost]];let wait=0;const parts=cs.map(([i,c])=>{const h=getW(i),miss=c-h;if(miss>0)wait=Math.max(wait,r[i]>0?miss/r[i]:Infinity);return curSpan(i,c)+(miss>0?`<small style="color:var(--dim)"> (${fmt(h)} held)</small>`:' <small style="color:#8fe39a">✓</small>')});
+return'Cost: '+parts.join(n.leg?'<br>':' ')+(wait>0?`<br><small style="color:var(--dim)">ready in ~${fT(wait)}</small>`:'')}
+function nodeUI(force){const p=$('node');if(view!='t'||sel<0){p.style.display='none';nodeSig='';return}
+const n=NODES[sel];if(!n){sel=-1;p.style.display='none';return}const own=ownN(n),av=availN(n),sig=sel+'|'+own+'|'+av;p.style.display='block';
+if(force||sig!=nodeSig){nodeSig=sig;const hcl=n.br==-1?'#fff':n.leg?'#ffcf6a':`hsl(${brH(n)*360},90%,70%)`,bo=brOwned();
+const sub=n.br==-1?'The origin of all branches':n.leg?`Legendary ${ROMAN(n.leg)} of ${LEGS.length} · costs all four currencies`:`${BR[n.br].n} · node ${n.j+1}/${availLen()} · ${bo[n.br]} unlocked${n.mile?' · keystone (double effect)':''}`;
+p.innerHTML=`<button id="ncl" style="float:right;min-height:36px;padding:4px 12px">✕</button><b style="color:${hcl}">${n.name}</b><br><small>${sub}</small><div style="margin:6px 0">${n.br==-1?'All four branches grow from here. Legendary nodes rise above it.':effTxt(n)}</div><div id="ndl" style="font-size:12px;color:#c6d2f0;margin-bottom:4px"></div>`+(own?'<small style="color:#8fe39a">✓ Unlocked</small>':`<small id="ncost"></small><button id="buy" style="width:100%;margin-top:6px">${av?'Unlock':'Locked: unlock the previous node first'}</button>`);
+$('ncl').onclick=()=>{sel=-1;nodeUI()};const b=$('buy');if(b)b.onclick=buyNode}
+$('ndl').innerHTML=own?'':nodeDelta(n);const b=$('buy');if(b){b.disabled=!(av&&canAfford(n));$('ncost').innerHTML=costTxt(n)}}
+function buyNode(){const n=NODES[sel];if(n&&availN(n)&&canAfford(n)){payNode(n);S.up.push(n.id);recalc();n.g=.6;toast((n.leg?'✦ ':'')+'Unlocked '+n.name);nodeUI(true);try{curHUD(true)}catch(e){}}}
+function treeSum(){const r=rates(),bo=brOwned(),AL=availLen(),val=[`cooldown ${fCD(cdn())}`,`luck ×10^${D.lk.toFixed(1)}`,`yield ×${fmt(D.cu)}`,`mod luck ×10^${D.ml.toFixed(1)}`],aff=NODES.filter(n=>availN(n)&&canAfford(n)).length;
+const lg=NODES.filter(n=>n.leg),lo=lg.filter(ownN).length,nx=lg.find(n=>!ownN(n)),nxt=nx?(nx.lv>AL?`next legendary needs a deeper rebirth`:nodeLocked(nx)?`next legendary: ${nx.lv} nodes in every branch`:`<b style="color:#ffcf6a">${nx.name.replace('Legendary: ','')}</b> is waiting`):'spire complete';
+$('tsum').innerHTML='<b>Constellation</b> <small>'+S.up.length+'/'+(AL*4+lg.filter(n=>!nodeLocked(n)).length)+'</small>'+BR.map((b,i)=>{const u=bo[i],h=b.h*360;return`<div class="br"><span style="color:hsl(${h},90%,72%)">${b.n}</span> <small>${u}/${AL}</small><div class="pb"><i style="width:${Math.min(100,u/AL*100)}%;background:hsl(${h},90%,60%)"></i></div><small>${curSpan(i,getW(i))} <span style="color:var(--dim)">+${fmt(r[i])}/s · ${val[i]}</span></small></div>`}).join('')
++`<div class="br"><span style="color:#ffcf6a">Legendary spire</span> <small>${lo}/${LEGS.length}</small><br><small style="color:var(--dim)">${nxt}</small></div><small style="color:${aff?'#ffe9a8':'var(--dim)'}">${aff?aff+' node'+(aff>1?'s':'')+' affordable now':'Tap a node to inspect it'}</small>${abLine()}`}
+/* ---- HUD: four currency counters ---- */
+{const st=document.createElement('style');st.textContent='#coin{display:grid;grid-template-columns:auto auto;gap:1px 12px;font-weight:600;font-size:14px;line-height:1.25}#coin small{font-weight:400;color:var(--dim);font-size:11px}#coin>div{white-space:nowrap}';(document.head||document.body).appendChild(st)}
+let _chS='';function curHUD(force){if(!S)return;const r=rates(),h=CUR.map((c,i)=>`<div title="${c.n}">${curSpan(i,getW(i))} <small>+${fmt(r[i])}/s</small></div>`).join('');if(force||h!=_chS){_chS=h;$('coin').innerHTML=h}}
+/* ---- legendary reveal toast ---- */
+let _legS=null,_legN=0;function legCheck(){if(!S)return;const n=NODES.filter(x=>x.leg&&!nodeLocked(x)).length;if(_legS!==S){_legS=S;_legN=n;return}if(n>_legN)toast('✦ A legendary node has risen above the Singularity Core. It costs all four currencies.');_legN=n}
+{const _h=hudUI;hudUI=function(){_h.apply(this,arguments);try{legCheck()}catch(e){}}}
+/* ---- rebirth: the head start applies to every currency ---- */
+{const _rb=doRebirth;doRebirth=function(){const r=_rb.apply(this,arguments);if(S){const h=S.coins;S.w=[h,h,0,h];_legS=S;_legN=0}return r}}
+/* ---- saves: the three new currencies (stardust stays in "c") ---- */
+{const _se=svEncode;svEncode=function(){const s=_se();try{const d=JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));const w=S.w||[0,0,0,0];d.w=[w[0],w[1],w[3]].map(v=>isFinite(v)?v:0);return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}catch(e){return s}}}
+{const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(!ok)return ok;try{const c=cleanSave(str)||String(str).trim(),d=JSON.parse(decodeURIComponent(escape(atob(c.slice(c.indexOf(':')+1))))),w=Array.isArray(S.w)&&S.w.length==4?S.w:[0,0,0,0],oc=isFinite(+d.c)&&+d.c>=0?+d.c:0,dw=Array.isArray(d.w)?d.w.map(v=>isFinite(+v)&&+v>=0?+v:0):[oc,oc,oc];/* saves from before the four currencies: mirror the stardust savings once */
+S.w=[w[0]+(dw[0]||0),w[1]+(dw[1]||0),0,w[3]+(dw[2]||0)]}catch(e){if(!Array.isArray(S.w))S.w=[0,0,0,0]}_legS=S;try{_legN=NODES.filter(x=>x.leg&&!nodeLocked(x)).length}catch(e){}return ok}}
+/* ---------- v23: codex currency rates, legendary impact-frame relics, upgrade navigator ---------- */
+let TGO=null,tlF=-1,_tlSig='';
+/* ---- codex: what every item would produce as a generator, top producer per currency marked ---- */
+function itemRates(i,m){if(m===undefined||m<-1)m=-1;const base=Math.pow(10,.25*K[i])*mmul(m)*ascMul(i),p=mprof(m),f=D.cu*(1+cnt()*.02)*TREE.rs;return p.map(x=>isFinite(x*base*f)?x*base*f:0)}
+function topGens(){const top=[-1,-1,-1,-1],tv=[-1,-1,-1,-1];OBJ.forEach(o=>{if(S.own[o.i]<=-2||o.pu=='rule')return;itemRates(o.i,S.own[o.i]).forEach((v,c)=>{if(v>tv[c]){tv[c]=v;top[c]=o.i}})});return{top,tv}}
+{const st=document.createElement('style');st.textContent=`.cr{display:flex;flex-wrap:wrap;gap:2px 9px;font-size:11px;margin-top:3px;align-items:center}.cr.pot{opacity:.5}.cr .tp{font-weight:700;border:1px solid currentColor;border-radius:5px;padding:0 4px;box-shadow:0 0 8px currentColor inset}
+.it.topg{border-color:#ffe9a8;box-shadow:0 0 10px rgba(255,233,168,.25)}#cxtop{font-size:12px;margin:0 0 8px;line-height:1.6}#cxtop b{font-weight:600}
+#tlist{position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 70px);width:250px;display:none;font-size:12px;z-index:5;max-height:calc(100vh - 170px);overflow:hidden;flex-direction:column}
+#tlist .hd{display:flex;align-items:center;gap:6px}#tlist .hd b{flex:1}#tlist .hd button{min-height:30px;padding:2px 10px}
+#tlf{display:flex;gap:4px;margin:6px 0;flex-wrap:wrap}#tlf button{min-height:28px;padding:2px 8px;font-size:12px;opacity:.55}#tlf button.on{opacity:1;border-color:currentColor}
+#tlb{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}#tlb .tr{display:flex;align-items:center;gap:6px;padding:5px 4px;border-radius:6px;cursor:pointer;border:1px solid transparent}
+#tlb .tr:hover,#tlb .tr.sel{border-color:var(--bd);background:rgba(255,255,255,.04)}#tlb .tr .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#tlb .tr small{color:var(--dim)}
+#tlb .tr .ok{color:#8fe39a}#tlb .tr button{min-height:28px;padding:0 9px;font-size:13px}#tlb .lg{background:linear-gradient(90deg,rgba(255,190,80,.16),transparent);border-color:rgba(255,200,100,.5)!important}
+#tlb .lg .nm{white-space:normal}#tlb .dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}body.tlon #node{left:270px}body.tlc #tlb,body.tlc #tlf{display:none}
+@media (max-width:600px){#tlist{width:170px;top:calc(env(safe-area-inset-top,0px) + 165px);max-height:45vh}body.tlon #node{left:10px}body.tlon #tsum{display:none!important}}
+body.cs #tlist{display:none!important}`;(document.head||document.body).appendChild(st)}
+function codexRates(){if($('cxp').style.display!='block')return;const box=$('cx');if(!box)return;
+if(cxTab==-2){box.querySelectorAll('.it.md[data-m]').forEach(el=>{if(el.classList.contains('no'))return;el.insertAdjacentHTML('beforeend','<div class="cr">'+profTxt(+el.dataset.m)+'</div>')});return}
+const {top,tv}=topGens();let hd=$('cxtop');if(!hd){hd=document.createElement('div');hd.id='cxtop';box.parentNode.insertBefore(hd,box)}
+hd.innerHTML='<b>Top generators this run</b> <small style="color:var(--dim)">(★ marks the best item for each currency)</small><br>'+CUR.map((c,k)=>top[k]>=0?`<span style="color:${c.c}">${c.s} ${OBJ[top[k]].n} · ${fmt(tv[k])}/s</span>`:`<span style="color:var(--dim)">${c.s} —</span>`).join(' &nbsp; ');
+box.querySelectorAll('.it[data-i]').forEach(el=>{const i=+el.dataset.i,o=OBJ[i];if(el.classList.contains('no')||!o||o.pu=='rule')return;const owned=S.own[i]>-2;let m=owned?S.own[i]:bestSeen(i);if(!(m>=-1))m=-1;const r=itemRates(i,m),tp=top.map(x=>x==i);if(tp.some(x=>x))el.classList.add('topg');
+el.insertAdjacentHTML('beforeend',`<div class="cr ${owned?'':'pot'}">${r.map((v,c)=>`<span class="${tp[c]?'tp':''}" style="color:${CUR[c].c}" title="${CUR[c].n} per second">${tp[c]?'★':''}${CUR[c].s}&#8202;${fmt(v)}/s</span>`).join('')}${owned?'':'<small>if owned</small>'}</div>`)})}
+{const _rc=refreshCodex;refreshCodex=function(){const r=_rc.apply(this,arguments);try{const hd=$('cxtop');if(hd)hd.style.display=cxTab==-2?'none':'';codexRates()}catch(e){}return r}}
+/* ---- legendary relics: an impact-frame shader on nested polyhedra with flickering speed lines ---- */
+const LEGFS=`uniform float st,fs,sd;void main(){vec3 n=normalize(vN),v=normalize(vV);float f=1.-abs(dot(n,v));float nz=fbm(vP*4.+vec3(t*.7,0.,sd));
+vec3 gold=vec3(1.,.72,.26)*(.35+nz*.75)+vec3(1.,.93,.75)*pow(f,2.5)*.9;vec3 col=gold;
+if(fs>.5&&fs<1.5)col=mix(vec3(0.),vec3(1.6),step(.5,f+nz*.15));else if(fs>1.5)col=mix(vec3(1.2,.04,.03),vec3(0.),step(.55,f+nz*.2));
+else col*=mix(.45,1.,st);gl_FragColor=vec4(col,1.);}`;
+const LEGV=[];
+function legSpikes(seed){const r=R(seed),P=[],A=[];for(let k=0;k<44;k++){const d=V3(gs(r),gs(r),gs(r)).normalize(),q=V3(gs(r),gs(r),gs(r)).cross(d).normalize().multiplyScalar(.018+r()*.03),r0=.9+r()*.25,r1=1.7+r()*1.2;
+[d.clone().multiplyScalar(r0).add(q),d.clone().multiplyScalar(r0).sub(q),d.clone().multiplyScalar(r1)].forEach((p,j)=>{P.push(p.x,p.y,p.z);A.push(k,j==2?1:0,0)})}
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('aux',new THREE.Float32BufferAttribute(A,3));
+const mat=new THREE.ShaderMaterial({uniforms:{fr:{value:0},fs:{value:0},al:{value:1}},transparent:true,depthWrite:false,side:THREE.DoubleSide,
+vertexShader:`attribute vec3 aux;uniform float fr;varying float vt;void main(){vec3 p=position;float h=fract(sin(aux.x*12.9898+fr*78.233)*43758.5453);if(aux.y>.5)p*=.3+h*1.9;vt=aux.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
+fragmentShader:`uniform float fs,al;varying float vt;void main(){vec3 c=fs<.5?vec3(.85,.62,.28):fs<1.5?vec3(1.):vec3(1.,.06,.03);gl_FragColor=vec4(c*(1.-vt*.6),al*(1.-vt*.6));}`});
+const m=new THREE.Mesh(g,mat);m.frustumCulled=false;return m}
+NODES.forEach((n,i)=>{if(!n.leg)return;const m=nm[i],mat=sm(LEGFS,{st:{value:0},fs:{value:0},sd:{value:n.leg*1.7}});m.material=mat;m.geometry=new THREE.IcosahedronGeometry(.62,0);
+const wire=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.DodecahedronGeometry(1.05,0)),new THREE.LineBasicMaterial({color:0xffd27a,transparent:true,depthWrite:false}));
+const stel=new THREE.Group();[0,1].forEach(k=>{const tt=new THREE.Mesh(new THREE.TetrahedronGeometry(.95,0),mat);if(k)tt.scale.set(-1,-1,-1);stel.add(tt)});
+const sw=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.TetrahedronGeometry(1.0,0)),wire.material);stel.add(sw);
+const knot=new THREE.Mesh(new THREE.TorusKnotGeometry(.95,.03,160,6,3,5),mat);const spk=legSpikes(n.leg*97+5);
+const grp=new THREE.Group();grp.add(wire,stel,knot,spk);m.add(grp);m.userData.big=1.25;LEGV.push({n,m,mat,wire,stel,knot,spk,grp,fr:0,fs:0})});
+let _lfT=0;
+{const _tf=treeFX;treeFX=function(t,dt){_tf(t,dt);if(TGO){tc.lerp(TGO,Math.min(1,dt*3));if(tc.distanceTo(TGO)<.01)TGO=null}
+_lfT+=dt;const step=_lfT>=1/11;if(step)_lfT=0;
+LEGV.forEach((L,k)=>{if(!L.m.visible)return;if(step){L.fr++;const h=Math.random();L.fs=h<.5?0:h<.82?1:2}
+const fs=L.fs;L.mat.uniforms.fs.value=fs;L.m.children[0].visible=fs==0;if(L.m.children[1])L.m.children[1].visible=fs==0&&ownN(L.n);L.spk.material.uniforms.fs.value=fs;L.spk.material.uniforms.fr.value=L.fr;L.spk.material.uniforms.al.value=ownN(L.n)?1:.55;
+L.wire.material.color.setRGB(fs==1?1:fs==2?1:1,fs==1?1:fs==2?.1:.82,fs==1?1:fs==2?.05:.48);
+L.grp.rotation.y=t*.35+k;L.stel.rotation.set(t*.6,t*.4,0);L.knot.rotation.set(t*.25,-t*.5,t*.15);L.wire.rotation.set(-t*.3,t*.2,0);
+const pul=1+.06*Math.sin(t*9+k)+(fs?.08:0);L.grp.scale.setScalar(pul)})}}
+/* ---- upgrade navigator: every node you can unlock right now, beside the tree ---- */
+{const d=document.createElement('div');d.id='tlist';d.className='card';d.innerHTML='<div class="hd"><b>Upgrades</b><small id="tlc"></small><button id="tlctr" title="Recenter the camera">◎</button><button id="tlx">▾</button></div><div id="tlf"></div><div id="tlb"></div>';document.body.appendChild(d);
+if(innerWidth<=600)document.body.classList.add('tlc');
+$('tlx').onclick=()=>{document.body.classList.toggle('tlc');_tlSig='';tlUI()};$('tlctr').onclick=()=>{TGO=V3(0,0,0);VW.t.d=95};
+$('tlf').onclick=e=>{const b=e.target.closest('button');if(!b)return;tlF=+b.dataset.f;_tlSig='';tlUI()};
+$('tlb').onclick=e=>{const row=e.target.closest('.tr');if(!row)return;const id=+row.dataset.id,n=NODES[id];if(!n)return;
+if(e.target.closest('button')){sel=id;buyNode();_tlSig='';tlUI();return}sel=id;nodeUI(true);TGO=n.pos.clone();VW.t.d=Math.min(VW.t.d,42);_tlSig='';tlUI()}}
+function tlUI(){const box=$('tlist');if(!box)return;const on=view=='t'&&!CS.on;box.style.display=on?'flex':'none';document.body.classList.toggle('tlon',on&&!document.body.classList.contains('tlc'));if(!on)return;
+const r=rates(),av=NODES.filter(n=>n.id>0&&availN(n)),eta=n=>{let w=0;(n.leg?n.costs.map((c,i)=>[i,c]):[[n.cur,n.cost]]).forEach(([i,c])=>{const m=c-getW(i);if(m>0)w=Math.max(w,r[i]>0?m/r[i]:Infinity)});return w};
+const rows=av.map(n=>({n,w:eta(n)})).filter(x=>tlF==-1||(tlF==4?x.n.leg:x.n.br==tlF)).sort((a,b)=>(b.n.leg?1:0)-(a.n.leg?1:0)||a.w-b.w||a.n.d-b.n.d).slice(0,60);
+const cnt_=av.filter(n=>canAfford(n)).length;
+const sig=tlF+'|'+sel+'|'+document.body.classList.contains('tlc')+'|'+rows.map(x=>x.n.id+':'+(x.w>0?fT(x.w):'ok')).join(',');if(sig==_tlSig)return;_tlSig=sig;
+$('tlc').textContent=cnt_+' ready · '+av.length+' open';
+$('tlf').innerHTML=[[-1,'All','#dfe7ff'],...CUR.map((c,i)=>[i,c.s,c.c]),[4,'✦ Legendary','#ffcf6a']].map(([f,l,c])=>`<button data-f="${f}" class="${tlF==f?'on':''}" style="color:${c}">${l}</button>`).join('');
+$('tlb').innerHTML=rows.length?rows.map(({n,w})=>{const c=n.leg?'#ffcf6a':`hsl(${brH(n)*360},90%,66%)`,cost=n.leg?CUR.map((k,i)=>`<span style="color:${k.c}">${k.s}${fmt(n.costs[i])}</span>`).join(' '):curSpan(n.cur,n.cost);
+return`<div class="tr ${n.leg?'lg':''} ${sel==n.id?'sel':''}" data-id="${n.id}"><span class="dot" style="background:${c};box-shadow:0 0 6px ${c}"></span><div class="nm"><span style="color:${c}">${n.leg?'✦ ':''}${n.name.replace('Legendary: ','')}</span><br><small>${cost} · ${w>0?'<span>~'+fT(w)+'</span>':'<span class="ok">ready</span>'}</small><br><small>${effTxt(n)}</small></div>${w>0?'':'<button title="Unlock">＋</button>'}</div>`}).join(''):'<small style="color:var(--dim)">Nothing to unlock here right now.</small>'}
+{const _h=hudUI;hudUI=function(){_h.apply(this,arguments);try{tlUI()}catch(e){}}}
+{const _sv=setView;setView=function(v){const r=_sv.apply(this,arguments);try{_tlSig='';tlUI()}catch(e){}return r}}
 let last=performance.now(),t=0,hc=0,ot=0;const ctr=V3(0,0,0),tc=V3(0,0,0);
 (function f(now){requestAnimationFrame(f);if(gfxSkip(now))return;const dt=Math.min(.1,(now-last)/1000);last=now;t+=dt;const odt=dt*warpStep(dt);ot+=odt;U.t.value=view=='u'?ot:t;
-S.coins+=income()*dt;const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}{const pv=(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%';if(pv!==lastP){lastP=pv;$('roll').style.setProperty('--p',pv)}}
-hc+=dt;if(hc>.15){hc=0;QUIET=true;try{$('coin').textContent=fmt(S.coins);$('inc').textContent='+'+fmt(income())+'/s';autoUI();$('st').innerHTML=`Cooldown ${cd<.01?cd.toExponential(1):cd.toFixed(2)}s${hasAuto()?' · auto':''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmt(S.rolls)} rolls · ${cnt()}/${N}`;hudUI();if(view=='t'&&sel>=0)nodeUI()}finally{QUIET=false}}
+gainAll(dt);const cd=cdn();if(hasAuto()&&S.autoOn){acc+=dt;let n=Math.floor(acc/cd);if(n>0){acc-=n*cd;if(n>3000){n=3000;acc=0}doRolls(n,false)}cdLeft=Math.max(0,cd-acc)}else{acc=0;cdLeft=Math.max(0,cdLeft-dt)}{const pv=(Math.min(1,cdLeft/cd)*100).toFixed(1)+'%';if(pv!==lastP){lastP=pv;$('roll').style.setProperty('--p',pv)}}
+hc+=dt;if(hc>.15){hc=0;QUIET=true;try{curHUD();autoUI();$('st').innerHTML=`Cooldown ${cd<.01?cd.toExponential(1):cd.toFixed(2)}s${hasAuto()?' · auto':''}<br>Luck ×10<sup>${D.lk.toFixed(1)}</sup> · Mod luck ×10<sup>${D.ml.toFixed(1)}</sup><br>${fmt(S.rolls)} rolls · ${cnt()}/${N}`;hudUI();if(view=='t'&&sel>=0)nodeUI()}finally{QUIET=false}}
 if(CS.on){csStep(dt)}else if(view=='u'){if(cur){if(!drag&&!cur.userData.noSpin)cur.rotation.y+=odt*.25;cur.userData.u&&cur.userData.u(ot);updFX(dt,odt);(cur.userData.bill||[]).forEach(b=>{b.quaternion.copy(cur.quaternion).invert().multiply(UC.quaternion)});}
 if(!drag)VW.u.th+=dt*.1;setCam(UC,VW.u,ctr);post(US,UC)}
 else{if(!drag)VW.t.th+=dt*.04;
-NODES.forEach((nd,i)=>{const vis=(ownN(nd)||ownN(NODES[nd.par]||nd))&&!nodeLocked(nd),tg=vis?1:0;nd.g+=(tg-nd.g)*Math.min(1,dt*3);const m=nm[i];m.visible=nd.g>.02;const own=ownN(nd);m.scale.setScalar(Math.max(.01,nd.g*(own?1.3:.75+.15*Math.sin(t*3+i)))*(i==sel?1.4:1));
+NODES.forEach((nd,i)=>{const vis=(ownN(nd)||ownN(NODES[nd.par]||nd))&&!nodeLocked(nd),tg=vis?1:0;nd.g+=(tg-nd.g)*Math.min(1,dt*3);const m=nm[i];m.visible=nd.g>.02;const own=ownN(nd);m.scale.setScalar(Math.max(.01,nd.g*(own?1.3:.75+.15*Math.sin(t*3+i)))*(i==sel?1.4:1)*(m.userData.big||1));
 m.children[0].material.opacity=own?1:.5;
-if(nd.par>=0){const p=NODES[nd.par].pos,q=p.clone().lerp(nd.pos,nd.g>.02?nd.g:0),a=eg.attributes.position.array,c=eg.attributes.color.array,cc=col(BR[nd.br].h,.9,own?.6:.3);a.set([p.x,p.y,p.z,q.x,q.y,q.z],i*6);const k=nd.g>.02?1:0;c.set([cc.r*k,cc.g*k,cc.b*k,cc.r*k,cc.g*k,cc.b*k],i*6)}});
+if(nd.par>=0){const p=NODES[nd.par].pos,q=p.clone().lerp(nd.pos,nd.g>.02?nd.g:0),a=eg.attributes.position.array,c=eg.attributes.color.array,cc=nd.leg?new THREE.Color(own?1:.5,own?.75:.38,own?.3:.15):col(brH(nd),.9,own?.6:.3);a.set([p.x,p.y,p.z,q.x,q.y,q.z],i*6);const k=nd.g>.02?1:0;c.set([cc.r*k,cc.g*k,cc.b*k,cc.r*k,cc.g*k,cc.b*k],i*6)}});
 eg.attributes.position.needsUpdate=eg.attributes.color.needsUpdate=true;treeFX(t,dt);setCam(TC,VW.t,tc);post(TS,TC)}})(performance.now());
 </script></body></html>
