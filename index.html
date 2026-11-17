@@ -166,7 +166,7 @@ function pick(L){let lo=0,hi=N-1;while(lo<hi){const m=(lo+hi+1)>>1;if(K[m]<=L)lo
 function roll1(){const i=biasPick(geo()+D.lk),M=geo()+D.ml;let m=-1;for(let j=MODS.length-1;j>=0;j--)if(MODS[j].r<=M&&!((MODS[j].rb||0)>S.rb)){m=j;break}S.rolls++;return[i,m]}
 function doRolls(n,manual){let nw=[],top=null;for(let a=0;a<n;a++){const[i,m]=roll1();S.cn[i]++;S.cx[i]|=1<<(m+1);if(S.rb>0&&OBJ[i].layer<S.rb&&!S.ec[i]&&Math.random()<echoP()){S.ec[i]=1;S.cxe[i]=1;recalc();toast('Echo discovered: '+OBJ[i].n)}const o=S.own[i];if(o===-2){S.own[i]=m;nw.push(i);if(!top||i>top[0])top=[i,m]}else if(m>o){S.own[i]=m;if(!top||i>top[0])top=[i,m];nw.push(-1-i)}else if(manual&&(!top||i>top[0]))top=[i,m]}
 if(nw.length){findToast(nw);nw.filter(i=>i>=0&&csFam(OBJ[i])).sort((a,b)=>a-b).forEach(playCS)}
-if(top&&(nw.length||manual))show(top[0],top[1]);if(nw.length)refreshCodex()}
+if(top&&(nw.length||manual))show(top[0],top[1]);if(nw.length)codexDirty()}
 let tt;function toast(s){const t=$('toast');t.textContent=s;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',2200)}
 /* ---------- three setup ---------- */
 const TOUCH=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>1;
@@ -2482,6 +2482,10 @@ if(sp>=1){sp=0;for(let i=0;i<4;i++){const h=TEL.h[i];h.push(Math.log10(getW(i)+1
 {const _rb=doRebirth;doRebirth=function(){const r=_rb.apply(this,arguments);if(S){S.rt=0;TEL.h=[[],[],[],[]];TEL.rl=[]}return r}}
 {const _se=svEncode;svEncode=function(){const s=_se();try{const d=JSON.parse(decodeURIComponent(escape(atob(s.slice(6)))));d.rt=Math.round(S.rt||0);return'CSMS4:'+btoa(unescape(encodeURIComponent(JSON.stringify(d))))}catch(e){return s}}}
 {const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(ok)try{const c=cleanSave(str)||String(str).trim(),d=JSON.parse(decodeURIComponent(escape(atob(c.slice(c.indexOf(':')+1)))));S.rt=isFinite(+d.rt)&&+d.rt>=0?+d.rt:0}catch(e){S.rt=S.rt||0}TEL.h=[[],[],[],[]];TEL.rl=[];TEL.disp=[0,0,0,0];return ok}}
+/* ---------- codex refresh while rolling: deferred so iPad touch scrolling isn't cut off by a rebuild under the finger ---------- */
+let _cxDirty=false,_cxTouch=0,_cxScrollT=0;function codexDirty(){_cxDirty=true}
+{const P=$('cxp');P.addEventListener('touchstart',()=>{_cxTouch++},{passive:true});const end=()=>{_cxTouch=Math.max(0,_cxTouch-1);_cxScrollT=performance.now()};P.addEventListener('touchend',end,{passive:true});P.addEventListener('touchcancel',end,{passive:true});P.addEventListener('scroll',()=>{_cxScrollT=performance.now()},{passive:true})}
+setInterval(()=>{if(!_cxDirty)return;const P=$('cxp');if(P.style.display!='block'){_cxDirty=false;return}if(_cxTouch>0||performance.now()-_cxScrollT<1500)return;_cxDirty=false;const st=P.scrollTop;refreshCodex();P.scrollTop=st},1000);
 /* ---------- boot: load the stored save only after every system above is defined ---------- */
 let SAVE_OK=true;
 {const _i=imp;imp=function(str,quiet){const ok=_i(str,quiet);if(ok&&!quiet&&!SAVE_OK){SAVE_OK=true;toast('Save imported. Autosave is back on.')}return ok}}
