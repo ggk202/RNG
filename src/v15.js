@@ -86,7 +86,7 @@ vec3 L1=normalize(vec3(.45,.75,.55)),L2=normalize(vec3(-.7,-.25,.35));float nv=m
 float s1=pow(max(dot(N,normalize(L1+V)),0.),80.),s2=pow(max(dot(N,normalize(L2+V)),0.),24.)*.2,rim=pow(1.-nv,3.);
 vec3 c=vC*(.14+d1*.92+d2*.3)+vec3(1.)*(s1*.9+s2)+mix(vC,vec3(.55,.75,1.),.45)*rim*.6;float r=length(vA.xy);
 c+=vec3(.35,1.,.45)*fl*smoothstep(flR,flR*.3,r);c+=vec3(.35,.7,1.)*wav*pow(.5+.5*sin(r*1.1-t*3.),12.);gl_FragColor=vec4(c,1.);}`;
-const MCF=`uniform float t;varying vec3 vC,vN,vV,vA,vQ;${NZ}void main(){vec3 N=normalize(vN),V=normalize(vV);float f=pow(1.-abs(dot(N,V)),2.2);float sh=.8+.4*n(vQ*2.5+vec3(0.,t*.5,0.));float iso=smoothstep(.92,1.,sin(length(vQ-vA)*14.-t*1.5))*.25;gl_FragColor=vec4(vC*(.22+f*1.1+iso)*sh,.1+f*.5+iso*.3);}`;
+const MCF=`uniform float t;varying vec3 vC,vN,vV,vA,vQ;${NZ}void main(){vec3 N=normalize(vN),V=normalize(vV);float f=pow(1.-abs(dot(N,V)),2.2);float sh=.8+.4*n(vQ*2.5+vec3(0.,t*.5,0.));float iso=smoothstep(.92,1.,sin(length(vQ-vA)*14.-t*1.5))*.25;gl_FragColor=vec4(vC*(.2+f*1.)*sh+vC*iso,.05+f*.34+iso*.2);}`;
 function MBuf(){const P=[],N=[],C=[],A_=[],B_=[],S_=[],AM=[];const Y=[0,1,0],tpl={};
 const T=(k,f)=>tpl[k]||(tpl[k]=(()=>{const g=f(),g2=g.index?g.toNonIndexed():g;return{p:g2.attributes.position.array,n:g2.attributes.normal.array}})());
 const push=(p,n,c,a,b,s,am)=>{P.push(p[0],p[1],p[2]);N.push(n[0],n[1],n[2]);C.push(c.r,c.g,c.b);A_.push(a[0],a[1],a[2]);B_.push(b[0],b[1],b[2]);S_.push(s);AM.push(am[0],am[1])};
@@ -112,11 +112,11 @@ if(dash){const pa2=qa(pa,qk(d,.15)),pb2=qa(pb,qk(d,-.15)),sg=5;for(let k=0;k<sg;
 else{B.cyl(pa,pm,r,col(a),a.p,b.p,0,.5,amv,seg);B.cyl(pm,pb,r,col(b),a.p,b.p,.5,1,amv,seg)}})});
 const mg=new THREE.Group();g.add(mg);const mats=[];const addB=(bb,ro)=>{const mt=molMat(o);mats.push(mt);const m=new THREE.Mesh(bb.geo(),mt);m.frustumCulled=false;mg.add(m);return m};
 const meshes=bufs?bufs.map(addB):[addB(buf)];
-if(o.cloud&&n<=30){const cb=MBuf();A.forEach((a,i)=>{const q=espQ(M,i),c=q<0?new THREE.Color(.92,.95,.92).lerp(new THREE.Color(1,.16,.1),Math.min(1,-q)):new THREE.Color(.92,.95,.92).lerp(new THREE.Color(.15,.4,1),Math.min(1,q));cb.sphere(a.p,ELT[a.e][2]*.88,c,am(a),32)});
+if(o.cloud&&n<=30){const cb=MBuf();A.forEach((a,i)=>{const q=espQ(M,i),c=q<0?new THREE.Color(.92,.95,.92).lerp(new THREE.Color(1,.16,.1),Math.min(1,-q)):new THREE.Color(.92,.95,.92).lerp(new THREE.Color(.15,.4,1),Math.min(1,q));cb.sphere(a.p,ELT[a.e][2]*.7,c,am(a),32)});
 const cm=new THREE.Mesh(cb.geo(),new THREE.ShaderMaterial({uniforms:MU(o),vertexShader:MVS,fragmentShader:MCF,transparent:true,depthWrite:true}));cm.renderOrder=2;cm.frustumCulled=false;mg.add(cm)}
 if(M.lp)M.lp.forEach(i=>{const lb=MBuf();M.slots(i,4,[0,0,1]).forEach(dv=>lb.ell(qa(A[i].p,qk(dv,.62)),[.32,.32,.55],qk(dv,1),new THREE.Color(1,.55,.75),.03));const lm=new THREE.Mesh(lb.geo(),new THREE.ShaderMaterial({uniforms:MU(o),vertexShader:MVS,fragmentShader:`varying vec3 vC,vN,vV,vA,vQ;void main(){float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),1.6);gl_FragColor=vec4(vC*(.15+f*.9),f);}`,...ADD}));lm.frustumCulled=false;mg.add(lm)});
 if(M.pi){[-1,1].forEach(sg=>{const tr=new THREE.Mesh(new THREE.TorusGeometry(M.pi,.36,24,96),sm(`void main(){float f=pow(1.-abs(dot(normalize(vN),normalize(vV))),1.5);float fl=.6+.4*sin(atan(vP.y,vP.x)*3.-t*2.);gl_FragColor=vec4(vec3(.35,.6,1.)*(.12+f*.8)*fl,1.);}`,{},ADD));tr.position.z=sg*.62;tr.scale.z=.7;mg.add(tr)})}
-let R=0;A.forEach(a=>R=Math.max(R,ql(a.p)+rad(a)));if(M.dna||M.rna||M.prot)R=nucProt(mg,M,o,mats);const fit=Math.min(o.mx||2.1,2.45/Math.max(R,.5));mg.scale.setScalar(fit);
+let R=0;A.forEach(a=>R=Math.max(R,ql(a.p)+(o.cloud&&n<=30?ELT[a.e][2]*.7:rad(a))));if(M.dna||M.rna||M.prot)R=nucProt(mg,M,o,mats);const fit=Math.min(o.mx||2.1,2.45/Math.max(R,.5));mg.scale.setScalar(fit);
 if(M.shells)onU(g,t=>meshes.forEach((m,k)=>{m.rotation.y=t*(k%2?-.12:.18)*(1+k*.2);m.rotation.x=t*.05*k}));
 if(M.lip){const pl=[22,-22].map(y=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(40,40),sm(`void main(){float f=fbm(vec3(vP.xy*.12,t*.1));float e=smoothstep(20.,12.,max(abs(vP.x),abs(vP.y)));gl_FragColor=vec4(vec3(.25,.55,1.)*(.05+f*.12)*e,1.);}`,{},ADD));m.rotation.x=-HP;m.position.y=y*1.12;mg.add(m)})}
 return{mg,mats,meshes,fit}}
