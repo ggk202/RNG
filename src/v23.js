@@ -54,15 +54,15 @@ if(innerWidth<=600)document.body.classList.add('tlc');
 $('tlx').onclick=()=>{document.body.classList.toggle('tlc');_tlSig='';tlUI()};$('tlctr').onclick=()=>{TGO=V3(0,0,0);VW.t.d=95};
 $('tlf').onclick=e=>{const b=e.target.closest('button');if(!b)return;tlF=+b.dataset.f;_tlSig='';tlUI()};
 $('tlb').onclick=e=>{const row=e.target.closest('.tr');if(!row)return;const id=+row.dataset.id,n=NODES[id];if(!n)return;
-if(e.target.closest('button')){sel=id;buyNode();_tlSig='';tlUI();return}sel=id;nodeUI(true);TGO=n.pos.clone();VW.t.d=Math.min(VW.t.d,42);_tlSig='';tlUI()}}
+if(e.target.closest('button')&&!n.mile){sel=id;buyNode();_tlSig='';tlUI();return}sel=id;nodeUI(true);TGO=n.pos.clone();VW.t.d=Math.min(VW.t.d,42);_tlSig='';tlUI()}}
 function tlUI(){const box=$('tlist');if(!box)return;const on=view=='t'&&!CS.on;box.style.display=on?'flex':'none';document.body.classList.toggle('tlon',on&&!document.body.classList.contains('tlc'));if(!on)return;
-const r=rates(),av=NODES.filter(n=>n.id>0&&availN(n)),eta=n=>{let w=0;(n.leg?n.costs.map((c,i)=>[i,c]):[[n.cur,n.cost]]).forEach(([i,c])=>{const m=c-getW(i);if(m>0)w=Math.max(w,r[i]>0?m/r[i]:Infinity)});return w};
+const r=rates(),av=NODES.filter(n=>n.id>0&&availN(n)),eta=n=>{let w=0;costList(n).forEach(([i,c])=>{const m=c-getW(i);if(m>0)w=Math.max(w,r[i]>0?m/r[i]:Infinity)});return w};
 const rows=av.map(n=>({n,w:eta(n)})).filter(x=>tlF==-1||(tlF==4?x.n.leg:x.n.br==tlF)).sort((a,b)=>(b.n.leg?1:0)-(a.n.leg?1:0)||a.w-b.w||a.n.d-b.n.d).slice(0,60);
 const cnt_=av.filter(n=>canAfford(n)).length;
 const sig=tlF+'|'+sel+'|'+document.body.classList.contains('tlc')+'|'+rows.map(x=>x.n.id+':'+(x.w>0?fT(x.w):'ok')).join(',');if(sig==_tlSig)return;_tlSig=sig;
 $('tlc').textContent=cnt_+' ready · '+av.length+' open';
 $('tlf').innerHTML=[[-1,'All','#dfe7ff'],...CUR.map((c,i)=>[i,c.s,c.c]),[4,'✦ Legendary','#ffcf6a']].map(([f,l,c])=>`<button data-f="${f}" class="${tlF==f?'on':''}" style="color:${c}">${l}</button>`).join('');
-$('tlb').innerHTML=rows.length?rows.map(({n,w})=>{const c=n.leg?'#ffcf6a':`hsl(${brH(n)*360},90%,66%)`,cost=n.leg?CUR.map((k,i)=>`<span style="color:${k.c}">${k.s}${fmt(n.costs[i])}</span>`).join(' '):curSpan(n.cur,n.cost);
-return`<div class="tr ${n.leg?'lg':''} ${sel==n.id?'sel':''}" data-id="${n.id}"><span class="dot" style="background:${c};box-shadow:0 0 6px ${c}"></span><div class="nm"><span style="color:${c}">${n.leg?'✦ ':''}${n.name.replace('Legendary: ','')}</span><br><small>${cost} · ${w>0?'<span>~'+fT(w)+'</span>':'<span class="ok">ready</span>'}</small><br><small>${effTxt(n)}</small></div>${w>0?'':'<button title="Unlock">＋</button>'}</div>`}).join(''):'<small style="color:var(--dim)">Nothing to unlock here right now.</small>'}
+$('tlb').innerHTML=rows.length?rows.map(({n,w})=>{const c=n.leg?'#ffcf6a':`hsl(${brH(n)*360},90%,66%)`,cost=costList(n).map(([i,c])=>curSpan(i,c)).join(' ');
+return`<div class="tr ${n.leg?'lg':''} ${sel==n.id?'sel':''}" data-id="${n.id}"><span class="dot" style="background:${c};box-shadow:0 0 6px ${c}"></span><div class="nm"><span style="color:${c}">${n.leg?'✦ ':''}${n.name.replace('Legendary: ','')}</span><br><small>${cost} · ${w>0?'<span>~'+fT(w)+'</span>':'<span class="ok">ready</span>'}</small><br><small>${effTxt(n)}</small></div>${w>0?'':n.mile?'<button title="Choose A or B">A/B</button>':'<button title="Unlock">＋</button>'}</div>`}).join(''):'<small style="color:var(--dim)">Nothing to unlock here right now.</small>'}
 {const _h=hudUI;hudUI=function(){_h.apply(this,arguments);try{tlUI()}catch(e){}}}
 {const _sv=setView;setView=function(v){const r=_sv.apply(this,arguments);try{_tlSig='';tlUI()}catch(e){}return r}}
